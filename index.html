@@ -612,16 +612,16 @@
         const titleCertificateConfig = {
             // Registration number positioning (NEAR TOP of page)
             registrationNumber: {
-                x: 140, 
-                y: 220, 
+                x: 445,  // Right under "team of"
+                y: 520,  // Near top (higher Y = closer to top)
                 size: 12,
                 color: [0, 0, 0] // Black
             },
             
             // Handler name positioning (BELOW reg number - "Karen Yuen")
             handlerName: {
-                x: 410,  // Center X (792/2)
-                y: 285,  // Below registration number
+                x: 396,  // Center X (792/2)
+                y: 470,  // Below registration number
                 size: 24,
                 color: [0, 0, 0], // Black
                 align: 'center'
@@ -629,8 +629,8 @@
             
             // Dog name positioning (BELOW handler - under & symbol - "Luka")
             dogName: {
-                x: 410,  // Center X (792/2) 
-                y: 285,  // Below handler name
+                x: 396,  // Center X (792/2) 
+                y: 420,  // Below handler name
                 size: 24,
                 color: [0, 0, 0], // Black
                 align: 'center'
@@ -638,17 +638,17 @@
             
             // Date positioning (MIDDLE of sheet - "On 08/25/2023, has completed...")
             dateEarned: {
-                x: 240,  // After "On " in the sentence
-                y: 220,  // Middle of page vertically (612/2 ≈ 306)
+                x: 372,  // After "On " in the sentence
+                y: 310,  // Middle of page vertically (612/2 ≈ 306)
                 size: 12,
                 color: [0, 0, 0] // Black
             },
             
             // Title and abbreviation positioning (LOWER area, right-justified)
             titleAbbreviation: {
-                x: 700,  // 3/4" from right border (792 - 54 = 738)
-                y: 175,  // Lower area of certificate
-                size: 30,
+                x: 738,  // 3/4" from right border (792 - 54 = 738)
+                y: 200,  // Lower area of certificate
+                size: 18,
                 color: [0, 0, 0.8], // Blue to match template
                 align: 'right' // Right-justified
             }
@@ -706,25 +706,37 @@
                 const boldFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
                 const timesBold = await pdfDoc.embedFont(PDFLib.StandardFonts.TimesRomanBold);
 
-                // Load custom Maiandra font from repository
+                // Load custom Maiandra font from repository - correct filename with space
                 let maiandraFont = timesBold; // Fallback
-                try {
-                    console.log('Attempting to load Maiandra font...');
-                    const fontUrl = 'https://raw.githubusercontent.com/cwagtracker/Tracker/main/fonts/Maiandra.TTF';
-                    const fontResponse = await fetch(fontUrl);
-                    console.log('Font response status:', fontResponse.status);
-                    
-                    if (fontResponse.ok) {
-                        const fontBytes = await fontResponse.arrayBuffer();
-                        console.log('Font bytes loaded, size:', fontBytes.byteLength);
-                        maiandraFont = await pdfDoc.embedFont(fontBytes);
-                        console.log('Maiandra font successfully embedded!');
-                    } else {
-                        console.warn('Font response not OK:', fontResponse.status, fontResponse.statusText);
+                
+                const fontUrls = [
+                    'https://raw.githubusercontent.com/cwagtracker/Tracker/main/fonts/Maiandra%20GD.TTF', // URL encoded space
+                    'https://raw.githubusercontent.com/cwagtracker/Tracker/main/fonts/Maiandra GD.TTF', // Direct space
+                    'https://raw.githubusercontent.com/cwagtracker/Tracker/main/fonts/Maiandra.TTF',
+                    'https://raw.githubusercontent.com/cwagtracker/Tracker/main/fonts/Maiandra.ttf',
+                ];
+                
+                for (const fontUrl of fontUrls) {
+                    try {
+                        console.log('Trying font URL:', fontUrl);
+                        const fontResponse = await fetch(fontUrl);
+                        console.log('Font response status:', fontResponse.status);
+                        
+                        if (fontResponse.ok) {
+                            const fontBytes = await fontResponse.arrayBuffer();
+                            console.log('Font bytes loaded, size:', fontBytes.byteLength);
+                            maiandraFont = await pdfDoc.embedFont(fontBytes);
+                            console.log('Maiandra GD font successfully embedded from:', fontUrl);
+                            break; // Success! Stop trying other URLs
+                        }
+                    } catch (fontError) {
+                        console.log('Failed to load from:', fontUrl, fontError.message);
+                        continue; // Try next URL
                     }
-                } catch (fontError) {
-                    console.error('Error loading Maiandra font:', fontError);
-                    console.warn('Using Times Bold fallback');
+                }
+                
+                if (maiandraFont === timesBold) {
+                    console.warn('All Maiandra font URLs failed, using Times Bold fallback');
                 }
 
                 // Add registration number (under "This certifies that the team of")
