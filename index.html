@@ -1,1240 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dog Trialing Records Tracker</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        // Certificate template mapping based on your structure
-        const certificateTemplateMapping = {
-            // Scent Work titles use Scent.pdf
-            'Patrol 1': { template: 'Scent.pdf', category: 'scent' },
-            'Detective 2': { template: 'Scent.pdf', category: 'scent' },
-            'Investigator 3': { template: 'Scent.pdf', category: 'scent' },
-            'Super Sleuth 4': { template: 'Scent.pdf', category: 'scent' },
-            'Private Inv': { template: 'Scent.pdf', category: 'scent' },
-            'Det Diversions': { template: 'Scent.pdf', category: 'scent' },
-            'Ranger 1': { template: 'Scent.pdf', category: 'scent' },
-            'Ranger 2': { template: 'Scent.pdf', category: 'scent' },
-            'Ranger 3': { template: 'Scent.pdf', category: 'scent' },
-            'Ranger 4': { template: 'Scent.pdf', category: 'scent' },
-            'Ranger 5': { template: 'Scent.pdf', category: 'scent' },
-            'Dasher 3': { template: 'Scent.pdf', category: 'scent' },
-            'Dasher 4': { template: 'Scent.pdf', category: 'scent' },
-            'Dasher 5': { template: 'Scent.pdf', category: 'scent' },
-            'Dasher 6': { template: 'Scent.pdf', category: 'scent' },
-            
-            // Obedience titles use Obedience.pdf
-            'Obedience 1': { template: 'Obedience.pdf', category: 'obedience' },
-            'Obedience 2': { template: 'Obedience.pdf', category: 'obedience' },
-            'Obedience 3': { template: 'Obedience.pdf', category: 'obedience' },
-            'Obedience 4': { template: 'Obedience.pdf', category: 'obedience' },
-            'Obedience 5': { template: 'Obedience.pdf', category: 'obedience' },
-            
-            // Rally titles use Rally.pdf
-            'Starter': { template: 'Rally.pdf', category: 'rally' },
-            'Advanced': { template: 'Rally.pdf', category: 'rally' },
-            'Pro': { template: 'Rally.pdf', category: 'rally' },
-            'ARF': { template: 'Rally.pdf', category: 'rally' },
-            'Zoom 1': { template: 'Rally.pdf', category: 'rally' },
-            'Zoom 1.5': { template: 'Rally.pdf', category: 'rally' },
-            'Zoom 2': { template: 'Rally.pdf', category: 'rally' },
-            
-            // Games titles use Games.pdf
-            'Games 1': { template: 'Games.pdf', category: 'games' },
-            'Games 2': { template: 'Games.pdf', category: 'games' },
-            'Games 3': { template: 'Games.pdf', category: 'games' },
-            'Games 4': { template: 'Games.pdf', category: 'games' }
-        };
-
-        // Font and positioning configuration for title certificates
-        const titleCertificateConfig = {
-            // Registration number positioning (top left area)
-            registrationNumber: {
-                x: 105,  // Left side position
-                y: 780,  // Near top
-                size: 14,
-                font: 'Calibri',
-                color: [0, 0, 0], // Black
-                align: 'left'
-            },
-            
-            // Handler name positioning (center area)
-            handlerName: {
-                x: 396,  // Center X
-                y: 540,  // Upper middle
-                size: 24,
-                font: 'Calibri',
-                color: [0, 0, 0], // Black
-                align: 'center'
-            },
-            
-            // Dog name positioning (center, below handler)
-            dogName: {
-                x: 396,  // Center X
-                y: 500,  // Below handler
-                size: 28,
-                font: 'Calibri',
-                color: [0, 0, 0], // Black
-                align: 'center'
-            },
-            
-            // Date positioning (in sentence area)
-            dateEarned: {
-                x: 180,  // In the sentence
-                y: 380,
-                size: 14,
-                font: 'Calibri',
-                color: [0, 0, 0], // Black
-                align: 'left'
-            },
-            
-            // Title abbreviation positioning (bottom right, above signature)
-            titleAbbreviation: {
-                x: 396,  // Bottom right area
-                y: 320,  // Above signature
-                size: 30,
-                font: 'Maiandra GD',
-                fontWeight: 'Bold',
-                color: [0, 0, 0.5], // #000080 (Navy blue)
-                align: 'center'
-            }
-        };
-
-        // Ace certificate configuration (different positioning and fonts)
-        const aceCertificateConfig = {
-            // For Ace certificates - different template and positioning
-            handlerName: {
-                x: 396,
-                y: 580,  // Different Y position for Ace template
-                size: 28,
-                font: 'Calibri',
-                color: [0, 0, 0],
-                align: 'center'
-            },
-            
-            dogName: {
-                x: 396,
-                y: 540,  // Different Y position for Ace template
-                size: 32,
-                font: 'Calibri',
-                color: [0, 0, 0],
-                align: 'center'
-            },
-            
-            // Ace certificates show level + "Ace" designation
-            aceDesignation: {
-                x: 396,
-                y: 300,
-                size: 28,
-                font: 'Maiandra GD',
-                fontWeight: 'Bold',
-                color: [0.6, 0.2, 0.8], // Purple for Ace
-                align: 'center'
-            }
-        };
-
-        // Level to certificate mapping
-        const levelToCertificate = {
-            'Patrol 1': 'Patrol 1',
-            'Detective 2': 'Detective 2', 
-            'Investigator 3': 'Investigator 3',
-            'Super Sleuth 4': 'Super Sleuth 4',
-            'Private Inv': 'Private Inv',
-            'Det Diversions': 'Det Diversions',
-            'Ranger 1': 'Ranger 1',
-            'Ranger 2': 'Ranger 2',
-            'Ranger 3': 'Ranger 3',
-            'Ranger 4': 'Ranger 4',
-            'Ranger 5': 'Ranger 5',
-            'Dasher 3': 'Dasher 3',
-            'Dasher 4': 'Dasher 4',
-            'Dasher 5': 'Dasher 5',
-            'Dasher 6': 'Dasher 6',
-            'Obedience 1': 'Obedience 1',
-            'Obedience 2': 'Obedience 2',
-            'Obedience 3': 'Obedience 3',
-            'Obedience 4': 'Obedience 4',
-            'Obedience 5': 'Obedience 5',
-            'Starter': 'Starter',
-            'Advanced': 'Advanced',
-            'Pro': 'Pro',
-            'ARF': 'ARF',
-            'Zoom 1': 'Zoom 1',
-            'Zoom 1.5': 'Zoom 1.5',
-            'Zoom 2': 'Zoom 2',
-            'Games 1': 'Games 1',
-            'Games 2': 'Games 2',
-            'Games 3': 'Games 3',
-            'Games 4': 'Games 4'
-        };
-        async function generateSpecificCertificate(certType, level, regNumber, dogName, abbreviation, template) {
-            try {
-                const btn = event.target;
-                const originalText = btn.textContent;
-                btn.textContent = 'Generating...';
-                btn.disabled = true;
-
-                // Get dog's records for this level
-                const levelRecords = trialingData.filter(r => 
-                    r.registrationNumber === regNumber && r.level === level
-                );
-
-                if (levelRecords.length === 0) {
-                    throw new Error('No records found for this level');
-                }
-
-                // Calculate date earned if it's a title certificate
-                let dateEarned = new Date().toLocaleDateString();
-                if (certType === 'title') {
-                    const titleInfo = calculateTitlePoints(levelRecords);
-                    dateEarned = titleInfo.titleDate ? titleInfo.titleDate.toLocaleDateString() : dateEarned;
-                }
-
-                // Load the correct template from GitHub
-                const templateUrl = `https://raw.githubusercontent.com/YOURUSERNAME/cwags-certificates/main/templates/${template}`;
-                const response = await fetch(templateUrl);
-                if (!response.ok) {
-                    throw new Error(`Certificate template not found: ${template}`);
-                }
-                
-                const templateBytes = await response.arrayBuffer();
-
-                // Generate the certificate based on type
-                let pdfBytes;
-                if (certType === 'title') {
-                    pdfBytes = await createTitleCertificateWithOverlay(templateBytes, {
-                        registrationNumber: regNumber,
-                        handlerName: '', // Leave blank as requested
-                        dogName: dogName,
-                        dateEarned: dateEarned,
-                        titleAbbreviation: abbreviation
-                    });
-                } else { // ace certificate
-                    pdfBytes = await createAceCertificateWithOverlay(templateBytes, {
-                        handlerName: '', // Leave blank as requested
-                        dogName: dogName,
-                        aceDesignation: abbreviation
-                    });
-                }
-
-                // Download the certificate
-                const filename = `${dogName}-${level.replace(/\s+/g, '-')}-${certType === 'title' ? 'Title' : 'Ace'}-Certificate.pdf`;
-                downloadPDF(pdfBytes, filename);
-
-                btn.textContent = originalText;
-                btn.disabled = false;
-
-            } catch (error) {
-                console.error('Certificate generation error:', error);
-                alert(`Unable to generate certificate: ${error.message}\n\nPlease ensure the certificate templates are uploaded to GitHub.`);
-                
-                const btn = event.target;
-                btn.textContent = 'Generate PDF';
-                btn.disabled = false;
-            }
-        }
-
-        async function createTitleCertificateWithOverlay(templateBytes, data) {
-            const pdfDoc = await PDFLib.PDFDocument.load(templateBytes);
-            
-            // Embed fonts (using standard fonts for now, can be enhanced later)
-            const calibriFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-            const maiandraFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold); // Fallback for Maiandra GD
-            
-            const pages = pdfDoc.getPages();
-            const firstPage = pages[0];
-            
-            // Add registration number (top left)
-            const regConfig = titleCertificateConfig.registrationNumber;
-            firstPage.drawText(data.registrationNumber, {
-                x: regConfig.x,
-                y: regConfig.y,
-                size: regConfig.size,
-                font: calibriFont,
-                color: PDFLib.rgb(regConfig.color[0], regConfig.color[1], regConfig.color[2])
-            });
-
-            // Add handler name (center area) - LEFT BLANK as requested
-            // const handlerConfig = titleCertificateConfig.handlerName;
-            // (Handler name intentionally left blank for manual entry)
-
-            // Add dog name (center, below handler)
-            const dogConfig = titleCertificateConfig.dogName;
-            const dogTextWidth = calibriFont.widthOfTextAtSize(data.dogName, dogConfig.size);
-            const dogX = dogConfig.align === 'center' ? dogConfig.x - (dogTextWidth / 2) : dogConfig.x;
-            
-            firstPage.drawText(data.dogName, {
-                x: dogX,
-                y: dogConfig.y,
-                size: dogConfig.size,
-                font: calibriFont,
-                color: PDFLib.rgb(dogConfig.color[0], dogConfig.color[1], dogConfig.color[2])
-            });
-
-            // Add date earned
-            const dateConfig = titleCertificateConfig.dateEarned;
-            firstPage.drawText(data.dateEarned, {
-                x: dateConfig.x,
-                y: dateConfig.y,
-                size: dateConfig.size,
-                font: calibriFont,
-                color: PDFLib.rgb(dateConfig.color[0], dateConfig.color[1], dateConfig.color[2])
-            });
-
-            // Add title abbreviation (bottom right, Maiandra GD Bold, size 30, navy blue)
-            const titleConfig = titleCertificateConfig.titleAbbreviation;
-            const titleTextWidth = maiandraFont.widthOfTextAtSize(data.titleAbbreviation, titleConfig.size);
-            const titleX = titleConfig.align === 'center' ? titleConfig.x - (titleTextWidth / 2) : titleConfig.x;
-            
-            firstPage.drawText(data.titleAbbreviation, {
-                x: titleX,
-                y: titleConfig.y,
-                size: titleConfig.size,
-                font: maiandraFont,
-                color: PDFLib.rgb(titleConfig.color[0], titleConfig.color[1], titleConfig.color[2])
-            });
-            
-            return await pdfDoc.save();
-        }
-
-        async function createAceCertificateWithOverlay(templateBytes, data) {
-            const pdfDoc = await PDFLib.PDFDocument.load(templateBytes);
-            
-            // Embed fonts
-            const calibriFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-            const maiandraFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
-            
-            const pages = pdfDoc.getPages();
-            const firstPage = pages[0];
-            
-            // Add handler name for Ace certificate - LEFT BLANK as requested
-            // const handlerConfig = aceCertificateConfig.handlerName;
-            // (Handler name intentionally left blank for manual entry)
-
-            // Add dog name for Ace certificate
-            const dogConfig = aceCertificateConfig.dogName;
-            const dogTextWidth = calibriFont.widthOfTextAtSize(data.dogName, dogConfig.size);
-            const dogX = dogConfig.align === 'center' ? dogConfig.x - (dogTextWidth / 2) : dogConfig.x;
-            
-            firstPage.drawText(data.dogName, {
-                x: dogX,
-                y: dogConfig.y,
-                size: dogConfig.size,
-                font: calibriFont,
-                color: PDFLib.rgb(dogConfig.color[0], dogConfig.color[1], dogConfig.color[2])
-            });
-
-            // Add Ace designation (purple color for distinction)
-            const aceConfig = aceCertificateConfig.aceDesignation;
-            const aceTextWidth = maiandraFont.widthOfTextAtSize(data.aceDesignation, aceConfig.size);
-            const aceX = aceConfig.align === 'center' ? aceConfig.x - (aceTextWidth / 2) : aceConfig.x;
-            
-            firstPage.drawText(data.aceDesignation, {
-                x: aceX,
-                y: aceConfig.y,
-                size: aceConfig.size,
-                font: maiandraFont,
-                color: PDFLib.rgb(aceConfig.color[0], aceConfig.color[1], aceConfig.color[2])
-            });
-            
-            return await pdfDoc.save();
-        }
-
-        async function createCertificateWithOverlay(templateBytes, config, data) {
-            const pdfDoc = await PDFLib.PDFDocument.load(templateBytes);
-            const helveticaFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-            const helveticaBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
-            
-            const pages = pdfDoc.getPages();
-            const firstPage = pages[0];
-            
-            // Add text overlays based on configuration
-            Object.entries(config.fields).forEach(([fieldName, fieldConfig]) => {
-                const text = data[fieldName] || '';
-                if (!text) return;
-                
-                let x = fieldConfig.x;
-                const font = fieldConfig.size > 20 ? helveticaBold : helveticaFont;
-                
-                // Handle text alignment
-                if (fieldConfig.align === 'center') {
-                    const textWidth = font.widthOfTextAtSize(text, fieldConfig.size);
-                    x = fieldConfig.x - (textWidth / 2);
-                } else if (fieldConfig.align === 'right') {
-                    const textWidth = font.widthOfTextAtSize(text, fieldConfig.size);
-                    x = fieldConfig.x - textWidth;
-                }
-                
-                firstPage.drawText(text, {
-                    x: x,
-                    y: fieldConfig.y,
-                    size: fieldConfig.size,
-                    font: font,
-                    color: PDFLib.rgb(fieldConfig.color[0], fieldConfig.color[1], fieldConfig.color[2])
-                });
-            });
-            
-            return await pdfDoc.save();
-        }
-
-        function downloadPDF(pdfBytes, filename) {
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-            const url = URL.createObjectURL(blob);
-            
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = filename;
-            link.click();
-            
-            URL.revokeObjectURL(url);
-        }
-            try {
-                // Show loading indicator
-                const btn = event.target;
-                const originalText = btn.textContent;
-                btn.textContent = 'Loading...';
-                btn.disabled = true;
-                
-                // Get certificate template from GitHub
-                const templateUrl = `https://raw.githubusercontent.com/yourusername/cwags-certificates/main/${level.toLowerCase().replace(/\s+/g, '-')}-certificate.pdf`;
-                
-                // Download the template
-                const response = await fetch(templateUrl);
-                if (!response.ok) {
-                    throw new Error(`Certificate template not found for ${level}`);
-                }
-                
-                const templateBlob = await response.blob();
-                
-                // Get owner info (you'll need to implement this based on your data structure)
-                const ownerInfo = await getOwnerInfo(dogInfo.regNumber);
-                
-                // Create filled certificate
-                await fillCertificate(templateBlob, {
-                    dogName: dogInfo.callName,
-                    handlerName: ownerInfo.handlerName,
-                    registrationNumber: dogInfo.regNumber,
-                    level: level,
-                    dateEarned: dogInfo.titleDate || new Date().toLocaleDateString(),
-                    ownerName: ownerInfo.ownerName
-                });
-                
-                // Restore button
-                btn.textContent = originalText;
-                btn.disabled = false;
-                
-            } catch (error) {
-                console.error('Certificate generation error:', error);
-                alert(`Unable to generate certificate: ${error.message}\n\nPlease ensure certificate templates are available in the GitHub repository.`);
-                
-                // Restore button
-                const btn = event.target;
-                btn.textContent = 'Print Certificate';
-                btn.disabled = false;
-            }
-        }
-
-        async function getOwnerInfo(regNumber) {
-            // Extract owner ID from registration number (format: YY-OWNERID-DOG)
-            const parts = regNumber.split('-');
-            const ownerId = parts[1];
-            
-            // In a real implementation, this would fetch from your data source
-            // For now, return placeholder data
-            return {
-                ownerName: `Owner ${ownerId}`,
-                handlerName: `Handler ${ownerId}`,
-                ownerId: ownerId
-            };
-        }
-
-        async function fillCertificate(templateBlob, certData) {
-            // Create a new PDF with the filled data
-            const pdf = await PDFLib.PDFDocument.load(await templateBlob.arrayBuffer());
-            
-            // Get the form (assuming the PDF has fillable fields)
-            const form = pdf.getForm();
-            
-            try {
-                // Fill the form fields (field names should match your PDF templates)
-                const fields = form.getFields();
-                console.log('Available fields:', fields.map(f => f.getName()));
-                
-                // Common field mappings
-                const fieldMappings = {
-                    'dogName': certData.dogName,
-                    'dog_name': certData.dogName,
-                    'handlerName': certData.handlerName,
-                    'handler_name': certData.handlerName,
-                    'registrationNumber': certData.registrationNumber,
-                    'registration_number': certData.registrationNumber,
-                    'level': certData.level,
-                    'dateEarned': certData.dateEarned,
-                    'date_earned': certData.dateEarned,
-                    'ownerName': certData.ownerName,
-                    'owner_name': certData.ownerName
-                };
-                
-                // Fill available fields
-                Object.entries(fieldMappings).forEach(([fieldName, value]) => {
-                    try {
-                        const field = form.getField(fieldName);
-                        if (field) {
-                            field.setText(value);
-                        }
-                    } catch (e) {
-                        // Field doesn't exist, continue
-                    }
-                });
-                
-                // Flatten the form to prevent further editing
-                form.flatten();
-                
-            } catch (error) {
-                console.log('No fillable form found, adding text overlay');
-                // If no form fields, add text directly to the PDF
-                await addTextOverlay(pdf, certData);
-            }
-            
-            // Save and download the PDF
-            const pdfBytes = await pdf.save();
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-            const url = URL.createObjectURL(blob);
-            
-            // Create download link
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${certData.dogName}-${certData.level}-Certificate.pdf`;
-            link.click();
-            
-            // Clean up
-            URL.revokeObjectURL(url);
-        }
-
-        async function addTextOverlay(pdf, certData) {
-            // Add text overlay if no form fields are available
-            const pages = pdf.getPages();
-            const firstPage = pages[0];
-            const { width, height } = firstPage.getSize();
-            
-            // You'll need to adjust these coordinates based on your certificate templates
-            firstPage.drawText(certData.dogName, {
-                x: width * 0.5,
-                y: height * 0.6,
-                size: 24,
-                color: PDFLib.rgb(0, 0, 0),
-            });
-            
-            firstPage.drawText(certData.handlerName, {
-                x: width * 0.5,
-                y: height * 0.5,
-                size: 18,
-                color: PDFLib.rgb(0, 0, 0),
-            });
-            
-            firstPage.drawText(certData.registrationNumber, {
-                x: width * 0.5,
-                y: height * 0.4,
-                size: 14,
-                color: PDFLib.rgb(0, 0, 0),
-            });
-            
-            firstPage.drawText(certData.dateEarned, {
-                x: width * 0.5,
-                y: height * 0.3,
-                size: 14,
-                color: PDFLib.rgb(0, 0, 0),
-            });
-        }
-
-        function searchDogFromOwnerView(regNumber) {
-            // Fill in the search input with the registration number
-            document.getElementById('searchInput').value = regNumber;
-            
-            // Perform the search
-            searchDog();
-        }
-
-        // Make the function globally accessible
-        window.searchDogFromOwnerView = searchDogFromOwnerView;
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-            margin: 0;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
-            position: relative;
-        }
-
-        .header {
-            background: linear-gradient(90deg, #2c3e50, #34495e);
-            color: white;
-            padding: 30px;
-        }
-
-        .header-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .header-text {
-            text-align: center;
-            flex: 1;
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
-
-        .header p {
-            opacity: 0.9;
-            font-size: 1.1rem;
-            margin-bottom: 5px;
-        }
-
-        .last-updated {
-            opacity: 0.8;
-            font-size: 0.95rem;
-            font-style: italic;
-        }
-
-        .logo {
-            width: 160px;
-            height: 160px;
-            background-image: url('cwags-logo.png');
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            image-rendering: -webkit-optimize-contrast;
-            image-rendering: crisp-edges;
-        }
-
-        .search-section {
-            padding: 30px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #e9ecef;
-        }
-
-        .search-container {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .search-input {
-            padding: 15px 20px;
-            font-size: 1.1rem;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            width: 300px;
-            max-width: 100%;
-            transition: all 0.3s ease;
-        }
-
-        .search-input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .search-btn {
-            padding: 15px 30px;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .search-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
-
-        .owner-view-btn {
-            padding: 15px 30px;
-            background: linear-gradient(45deg, #28a745, #20c997);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .certificates-btn {
-            padding: 15px 30px;
-            background: linear-gradient(45deg, #6f42c1, #8e44ad);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 20px;
-        }
-
-        .certificates-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(111, 66, 193, 0.3);
-        }
-
-
-
-        .main-content {
-            padding: 30px;
-        }
-
-        .summary-section {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            overflow: hidden;
-            width: 100%;
-        }
-
-        .section-header {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            padding: 20px;
-            font-size: 1.3rem;
-            font-weight: 600;
-        }
-
-        .section-content {
-            padding: 20px;
-        }
-
-        .dog-info {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .dog-info h3 {
-            color: #2c3e50;
-            margin-bottom: 10px;
-            font-size: 1.4rem;
-        }
-
-        .dog-info p {
-            color: #7f8c8d;
-            margin: 5px 0;
-        }
-
-        .level-summary {
-            background: white;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 15px;
-            align-items: start;
-        }
-
-        .level-info {
-            flex: 1;
-        }
-
-        .level-summary h4 {
-            color: #2c3e50;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .title-status {
-            font-size: 0.9rem;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-weight: 600;
-        }
-
-        .title-earned {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .no-title {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .points-breakdown {
-            font-size: 0.9rem;
-            margin: 8px 0;
-        }
-
-        .points-breakdown div {
-            margin: 4px 0;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .ace-info {
-            color: #6f42c1;
-            font-weight: 600;
-        }
-
-        .details-btn {
-            background: linear-gradient(45deg, #17a2b8, #20c997);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            padding: 8px 16px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-            align-self: start;
-        }
-
-        .details-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(23, 162, 184, 0.3);
-        }
-
-        .records-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-
-        .records-table th,
-        .records-table td {
-            padding: 12px 8px;
-            text-align: left;
-            border-bottom: 1px solid #e9ecef;
-            font-size: 0.9rem;
-        }
-
-        .records-table th {
-            background: #f8f9fa;
-            font-weight: 600;
-            color: #495057;
-        }
-
-        .records-table tr:hover {
-            background: #f8f9fa;
-        }
-
-        .points-badge {
-            background: #28a745;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .points-badge.zero {
-            background: #dc3545;
-        }
-
-        .error-message {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            text-align: center;
-        }
-
-        .validation-rules {
-            background: #e7f3ff;
-            border: 1px solid #b8daff;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 20px;
-        }
-
-        .validation-rules h4 {
-            color: #004085;
-            margin-bottom: 10px;
-        }
-
-        .validation-rules ul {
-            margin-left: 20px;
-        }
-
-        .validation-rules li {
-            color: #004085;
-            margin: 5px 0;
-            font-size: 0.9rem;
-        }
-
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-        }
-
-        .modal-content {
-            background-color: white;
-            margin: 5% auto;
-            padding: 0;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 800px;
-            max-height: 80vh;
-            overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-        }
-
-        .modal-header {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h2 {
-            margin: 0;
-            font-size: 1.4rem;
-        }
-
-        .close {
-            color: white;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            line-height: 1;
-        }
-
-        .close:hover {
-            opacity: 0.7;
-        }
-
-        .modal-body {
-            padding: 20px;
-            max-height: 60vh;
-            overflow-y: auto;
-        }
-
-        .loading-message {
-            text-align: center;
-            padding: 40px;
-            color: #6c757d;
-            font-size: 1.1rem;
-        }
-
-        /* Owner View Styles */
-        .owner-view-container {
-            overflow-x: auto;
-            margin: 20px 0;
-        }
-
-        .owner-grid {
-            min-width: 800px;
-            border-collapse: collapse;
-            width: 100%;
-            font-size: 0.9rem;
-        }
-
-        .owner-grid th,
-        .owner-grid td {
-            border: 1px solid #dee2e6;
-            padding: 8px 6px;
-            text-align: center;
-            vertical-align: middle;
-        }
-
-        .owner-grid th {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .owner-grid th.dog-header {
-            background: #f8f9fa;
-            color: #2c3e50;
-            min-width: 80px;
-            max-width: 120px;
-            font-size: 0.8rem;
-            padding: 8px 4px;
-            line-height: 1.2;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .owner-grid th.dog-header:hover {
-            background: #e9ecef;
-            color: #007bff;
-            transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .owner-grid tr:nth-child(even) {
-            background: #f8f9fa;
-        }
-
-        .owner-grid tr:hover {
-            background: #e3f2fd;
-        }
-
-        .owner-grid .level-cell {
-            background: #e9ecef;
-            font-weight: 600;
-            color: #495057;
-            text-align: left;
-            padding-left: 12px;
-        }
-
-        .q-needed {
-            background: #fff3cd;
-            color: #856404;
-            font-weight: 600;
-        }
-
-        .title-ready {
-            background: #d4edda;
-            color: #155724;
-            font-weight: 600;
-        }
-
-        .ace-progress {
-            background: #e7e3ff;
-            color: #6f42c1;
-            font-weight: 600;
-        }
-
-        .no-data {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .back-to-search {
-            background: #6c757d;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 10px 20px;
-            cursor: pointer;
-            font-size: 1rem;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-        }
-
-        .back-to-search:hover {
-            background: #5a6268;
-            transform: translateY(-1px);
-        }
-
-        .legend-container {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-
-        .legend-container h4 {
-            margin-bottom: 10px;
-            color: #2c3e50;
-        }
-
-        .legend-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            font-size: 0.9rem;
-            margin-bottom: 8px;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .legend-box {
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-weight: 600;
-        }
-
-        .requirements-text {
-            font-size: 0.85rem;
-            color: #6c757d;
-            margin-top: 10px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="header-content">
-                <div id="leftLogo" class="logo"></div>
-                <div class="header-text">
-                    <h1>CWAGS Tracker</h1>
-                    <p>Track your dog's trialing progress, Q's, and title eligibility</p>
-                    <div class="last-updated" id="lastUpdated">Loading data...</div>
-                </div>
-                <div id="rightLogo" class="logo"></div>
-            </div>
-        </div>
-
-        <div class="search-section">
-            <div class="search-container">
-                <input type="text" id="searchInput" class="search-input" 
-                       placeholder="Enter Registration Number (e.g., 17-1734-06)" 
-                       onkeypress="handleKeyPress(event)">
-                <button class="search-btn" onclick="searchDog()">Search Dog Records</button>
-                <button class="owner-view-btn" onclick="showOwnerView()">Owner View by ID</button>
-                <small style="color: #666; font-size: 0.8rem;">v4.0 - Certificate System on Dog Pages!</small>
-            </div>
-        </div>
-
-        <div class="main-content">
-            <div class="summary-section">
-                <div class="section-header">Q's Summary & Title Progress</div>
-                <div class="section-content" id="summaryContent">
-                    <div class="loading-message">
-                        Loading trialing data...
-                    </div>
-                    <div class="validation-rules">
-                        <h4>Title Requirements</h4>
-                        <ul>
-                            <li>Minimum 4 Q's required for each level</li>
-                            <li>Q's must come from at least 2 different judges</li>
-                            <li>Prerequisites must be met before advancing to higher levels</li>
-                            <li>Special case: "Investigator 3" requires either "Patrol 1" OR "Detective 2"</li>
-                            <li>Games levels require at least 2 different games (BJ, C, P, T, GB)</li>
-                            <li>Ace awards given every 10 Q's after title is earned</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal for showing detailed records -->
-        <div id="detailsModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2 id="modalTitle">Level Details</h2>
-                    <span class="close" onclick="closeModal()">&times;</span>
-                </div>
-                <div class="modal-body" id="modalBody">
-                    <!-- Details will be populated here -->
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script>
-        let trialingData = [];
-        let currentDogRecords = [];
-        
-        // Level prerequisites mapping
-        const prerequisites = {
-            "Investigator 3": ["Patrol 1", "Detective 2"],
-            "Super Sleuth 4": ["Investigator 3"],
-            "Private Inv": ["Super Sleuth 4"],
-            "Det Diversions": ["Super Sleuth 4"],
-            "Ranger 2": ["Ranger 1"],
-            "Ranger 3": ["Ranger 2"],
-            "Ranger 4": ["Ranger 3"],
-            "Ranger 5": ["Ranger 4"],
-            "Dasher 4": ["Dasher 3"],
-            "Dasher 5": ["Dasher 4"],
-            "Dasher 6": ["Dasher 5"],
-            "Obedience 4": ["Obedience 3"],
-            "Obedience 5": ["Obedience 4"]
-        };
-
-        // Official title abbreviations
-        const titleAbbreviations = {
-            "Patrol 1": "CW-SP",
-            "Detective 2": "CW-SD",
-            "Investigator 3": "CW-SI",
-            "Super Sleuth 4": "CW-SS",
-            "Private Inv": "CW-SPI",
-            "Det Diversions": "CW-SDD",
-            "Ranger 1": "CW-ScR1",
-            "Ranger 2": "CW-ScR2",
-            "Ranger 3": "CW-ScR3",
-            "Ranger 4": "CW-ScR4",
-            "Ranger 5": "CW-ScR5",
-            "Dasher 3": "CW-SD3",
-            "Dasher 4": "CW-SD4",
-            "Dasher 5": "CW-SD5",
-            "Dasher 6": "CW-SD6",
-            "Obedience 1": "CW-Ob1",
-            "Obedience 2": "CW-Ob2",
-            "Obedience 3": "CW-Ob3",
-            "Obedience 4": "CW-Ob4",
-            "Obedience 5": "CW-Ob5",
-            "Starter": "CW-SR",
-            "Advanced": "CW-AR",
-            "Pro": "CW-PR",
-            "ARF": "CW-ARF",
-            "Zoom 1": "CW-ZR1",
-            "Zoom 1.5": "CW-ZR1.5",
-            "Zoom 2": "CW-ZR2",
-            "Games 1": "CW-G1",
-            "Games 2": "CW-G2",
-            "Games 3": "CW-G3",
-            "Games 4": "CW-G4"
-        };
-
-        // Proper level ordering
-        const levelOrder = [
-            "Patrol 1", "Detective 2", "Investigator 3", "Super Sleuth 4", "Private Inv", "Det Diversions",
-            "Ranger 1", "Ranger 2", "Ranger 3", "Ranger 4", "Ranger 5",
-            "Dasher 3", "Dasher 4", "Dasher 5", "Dasher 6",
-            "Obedience 1", "Obedience 2", "Obedience 3", "Obedience 4", "Obedience 5",
-            "Starter", "Advanced", "Pro", "ARF",
-            "Zoom 1", "Zoom 1.5", "Zoom 2",
-            "Games 1", "Games 2", "Games 3", "Games 4"
-        ];
-
-        function loadLogos() {
+function loadLogos() {
             // Logos are now handled by CSS background-image
             // This provides better quality for high-resolution images
         }
-
-
 
         function showOwnerView() {
             if (trialingData.length === 0) {
@@ -1502,16 +269,6 @@
                 printHeader.style.display = 'block';
             }
             
-            // Force horizontal text by replacing the dog header cells completely
-            const dogHeaders = clonedContent.querySelectorAll('th.dog-header');
-            dogHeaders.forEach(header => {
-                // Get the text content and split by <br> or newlines
-                const text = header.innerHTML.replace(/<br\s*\/?>/gi, ' ');
-                header.innerHTML = text;
-                // Remove all CSS classes and add a new one
-                header.className = 'dog-header-horizontal';
-            });
-            
             printWindow.document.write(`
                 <!DOCTYPE html>
                 <html>
@@ -1526,20 +283,6 @@
                         .owner-grid th, .owner-grid td { border: 1px solid #333; padding: 4px 3px; text-align: center; vertical-align: middle; line-height: 1.1; }
                         .owner-grid th { background: #2c3e50 !important; color: white !important; font-weight: 600; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 12px; }
                         .owner-grid .level-cell { background: #bdc3c7 !important; color: #2c3e50 !important; font-weight: 600; text-align: left; padding-left: 8px; font-size: 11px; -webkit-print-color-adjust: exact; print-color-adjust: exact; line-height: 1.1; width: 100px; }
-                        .dog-header-horizontal { 
-                            background: #ecf0f1 !important; 
-                            color: #2c3e50 !important; 
-                            font-size: 10px !important; 
-                            padding: 4px 3px !important; 
-                            text-align: center !important;
-                            writing-mode: horizontal-tb !important;
-                            -webkit-print-color-adjust: exact !important; 
-                            print-color-adjust: exact !important;
-                            white-space: nowrap !important;
-                            line-height: 1.2 !important;
-                            font-weight: 600 !important;
-                            overflow: hidden !important;
-                        }
                         .q-needed { background: #fff3cd !important; color: #856404 !important; font-weight: 600; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 11px; line-height: 1.1; }
                         .title-ready { background: #d4edda !important; color: #155724 !important; font-weight: 600; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 11px; line-height: 1.1; }
                         .ace-progress { background: #e7e3ff !important; color: #6f42c1 !important; font-weight: 600; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 11px; line-height: 1.1; }
@@ -1854,6 +597,29 @@
                     titleClass = 'no-title';
                 }
                 
+                // Generate certificate buttons
+                let certificateButtons = '';
+                if (hasTitleRequirements) {
+                    const officialTitle = titleAbbreviations[level] || level;
+                    
+                    // Title certificate button
+                    certificateButtons += `
+                        <button class="certificate-btn" onclick="generateTitleCertificate('${level}', '${regNumber}', '${dogName}', '${officialTitle}')">
+                            📜 Title Certificate
+                        </button>
+                    `;
+                    
+                    // Ace certificate button (if applicable)
+                    if (acePoints >= 10) {
+                        const aceCount = Math.floor(acePoints / 10);
+                        certificateButtons += `
+                            <button class="certificate-btn" onclick="generateAceCertificate('${level}', '${regNumber}', '${dogName}', ${aceCount})">
+                                🏆 Ace Certificate
+                            </button>
+                        `;
+                    }
+                }
+
                 html += `
                     <div class="level-summary">
                         <div class="level-info">
@@ -1881,7 +647,10 @@
                                 `}
                             </div>
                         </div>
-                        <button class="details-btn" onclick="showLevelDetails('${level}', '${dogName}')">Details</button>
+                        <div class="certificate-controls">
+                            <button class="details-btn" onclick="showLevelDetails('${level}', '${dogName}')">Details</button>
+                            ${certificateButtons}
+                        </div>
                     </div>
                 `;
             });
@@ -2165,4 +934,1045 @@
         };
     </script>
 </body>
-</html>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dog Trialing Records Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .header {
+            background: linear-gradient(90deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header-text {
+            text-align: center;
+            flex: 1;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .last-updated {
+            opacity: 0.8;
+            font-size: 0.95rem;
+            font-style: italic;
+        }
+
+        .logo {
+            width: 160px;
+            height: 160px;
+            background-image: url('cwags-logo.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+        }
+
+        .search-section {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            width: 300px;
+            max-width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-btn {
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .owner-view-btn {
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .certificates-btn {
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #6f42c1, #8e44ad);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .certificates-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(111, 66, 193, 0.3);
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .summary-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .section-header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .section-content {
+            padding: 20px;
+        }
+
+        .dog-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .dog-info h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.4rem;
+        }
+
+        .dog-info p {
+            color: #7f8c8d;
+            margin: 5px 0;
+        }
+
+        .level-summary {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 15px;
+            align-items: start;
+        }
+
+        .level-info {
+            flex: 1;
+        }
+
+        .level-summary h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .title-status {
+            font-size: 0.9rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .title-earned {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .no-title {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .points-breakdown {
+            font-size: 0.9rem;
+            margin: 8px 0;
+        }
+
+        .points-breakdown div {
+            margin: 4px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .ace-info {
+            color: #6f42c1;
+            font-weight: 600;
+        }
+
+        .details-btn {
+            background: linear-gradient(45deg, #17a2b8, #20c997);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            align-self: start;
+        }
+
+        .details-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(23, 162, 184, 0.3);
+        }
+
+        .certificate-btn {
+            background: linear-gradient(45deg, #6f42c1, #8e44ad);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            align-self: start;
+            margin-left: 10px;
+        }
+
+        .certificate-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(111, 66, 193, 0.3);
+        }
+
+        .certificate-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .certificate-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-end;
+        }
+
+        .records-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .records-table th,
+        .records-table td {
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 0.9rem;
+        }
+
+        .records-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .records-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .points-badge {
+            background: #28a745;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .points-badge.zero {
+            background: #dc3545;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .validation-rules {
+            background: #e7f3ff;
+            border: 1px solid #b8daff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .validation-rules h4 {
+            color: #004085;
+            margin-bottom: 10px;
+        }
+
+        .validation-rules ul {
+            margin-left: 20px;
+        }
+
+        .validation-rules li {
+            color: #004085;
+            margin: 5px 0;
+            font-size: 0.9rem;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.4rem;
+        }
+
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close:hover {
+            opacity: 0.7;
+        }
+
+        .modal-body {
+            padding: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .loading-message {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+            font-size: 1.1rem;
+        }
+
+        /* Owner View Styles */
+        .owner-view-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        .owner-grid {
+            min-width: 800px;
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 0.9rem;
+        }
+
+        .owner-grid th,
+        .owner-grid td {
+            border: 1px solid #dee2e6;
+            padding: 8px 6px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .owner-grid th {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .owner-grid th.dog-header {
+            background: #f8f9fa;
+            color: #2c3e50;
+            min-width: 80px;
+            max-width: 120px;
+            font-size: 0.8rem;
+            padding: 8px 4px;
+            line-height: 1.2;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .owner-grid th.dog-header:hover {
+            background: #e9ecef;
+            color: #007bff;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .owner-grid tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .owner-grid tr:hover {
+            background: #e3f2fd;
+        }
+
+        .owner-grid .level-cell {
+            background: #e9ecef;
+            font-weight: 600;
+            color: #495057;
+            text-align: left;
+            padding-left: 12px;
+        }
+
+        .q-needed {
+            background: #fff3cd;
+            color: #856404;
+            font-weight: 600;
+        }
+
+        .title-ready {
+            background: #d4edda;
+            color: #155724;
+            font-weight: 600;
+        }
+
+        .ace-progress {
+            background: #e7e3ff;
+            color: #6f42c1;
+            font-weight: 600;
+        }
+
+        .no-data {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .back-to-search {
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .back-to-search:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+
+        .legend-container {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .legend-container h4 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .legend-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-box {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
+        .requirements-text {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <div id="leftLogo" class="logo"></div>
+                <div class="header-text">
+                    <h1>CWAGS Tracker</h1>
+                    <p>Track your dog's trialing progress, Q's, and title eligibility</p>
+                    <div class="last-updated" id="lastUpdated">Loading data...</div>
+                </div>
+                <div id="rightLogo" class="logo"></div>
+            </div>
+        </div>
+
+        <div class="search-section">
+            <div class="search-container">
+                <input type="text" id="searchInput" class="search-input" 
+                       placeholder="Enter Registration Number (e.g., 17-1734-06)" 
+                       onkeypress="handleKeyPress(event)">
+                <button class="search-btn" onclick="searchDog()">Search Dog Records</button>
+                <button class="owner-view-btn" onclick="showOwnerView()">Owner View by ID</button>
+                <small style="color: #666; font-size: 0.8rem;">v4.1 - Certificate System Fixed!</small>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="summary-section">
+                <div class="section-header">Q's Summary & Title Progress</div>
+                <div class="section-content" id="summaryContent">
+                    <div class="loading-message">
+                        Loading trialing data...
+                    </div>
+                    <div class="validation-rules">
+                        <h4>Title Requirements</h4>
+                        <ul>
+                            <li>Minimum 4 Q's required for each level</li>
+                            <li>Q's must come from at least 2 different judges</li>
+                            <li>Prerequisites must be met before advancing to higher levels</li>
+                            <li>Special case: "Investigator 3" requires either "Patrol 1" OR "Detective 2"</li>
+                            <li>Games levels require at least 2 different games (BJ, C, P, T, GB)</li>
+                            <li>Ace awards given every 10 Q's after title is earned</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal for showing detailed records -->
+        <div id="detailsModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalTitle">Level Details</h2>
+                    <span class="close" onclick="closeModal()">&times;</span>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- Details will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <script>
+        let trialingData = [];
+        let currentDogRecords = [];
+        
+        // Certificate template mapping based on your structure
+        const certificateTemplateMapping = {
+            // Scent Work titles use Scent.pdf
+            'Patrol 1': { template: 'Scent.pdf', category: 'scent' },
+            'Detective 2': { template: 'Scent.pdf', category: 'scent' },
+            'Investigator 3': { template: 'Scent.pdf', category: 'scent' },
+            'Super Sleuth 4': { template: 'Scent.pdf', category: 'scent' },
+            'Private Inv': { template: 'Scent.pdf', category: 'scent' },
+            'Det Diversions': { template: 'Scent.pdf', category: 'scent' },
+            'Ranger 1': { template: 'Scent.pdf', category: 'scent' },
+            'Ranger 2': { template: 'Scent.pdf', category: 'scent' },
+            'Ranger 3': { template: 'Scent.pdf', category: 'scent' },
+            'Ranger 4': { template: 'Scent.pdf', category: 'scent' },
+            'Ranger 5': { template: 'Scent.pdf', category: 'scent' },
+            'Dasher 3': { template: 'Scent.pdf', category: 'scent' },
+            'Dasher 4': { template: 'Scent.pdf', category: 'scent' },
+            'Dasher 5': { template: 'Scent.pdf', category: 'scent' },
+            'Dasher 6': { template: 'Scent.pdf', category: 'scent' },
+            
+            // Obedience titles use Obedience.pdf
+            'Obedience 1': { template: 'Obedience.pdf', category: 'obedience' },
+            'Obedience 2': { template: 'Obedience.pdf', category: 'obedience' },
+            'Obedience 3': { template: 'Obedience.pdf', category: 'obedience' },
+            'Obedience 4': { template: 'Obedience.pdf', category: 'obedience' },
+            'Obedience 5': { template: 'Obedience.pdf', category: 'obedience' },
+            
+            // Rally titles use Rally.pdf
+            'Starter': { template: 'Rally.pdf', category: 'rally' },
+            'Advanced': { template: 'Rally.pdf', category: 'rally' },
+            'Pro': { template: 'Rally.pdf', category: 'rally' },
+            'ARF': { template: 'Rally.pdf', category: 'rally' },
+            'Zoom 1': { template: 'Rally.pdf', category: 'rally' },
+            'Zoom 1.5': { template: 'Rally.pdf', category: 'rally' },
+            'Zoom 2': { template: 'Rally.pdf', category: 'rally' },
+            
+            // Games titles use Games.pdf
+            'Games 1': { template: 'Games.pdf', category: 'games' },
+            'Games 2': { template: 'Games.pdf', category: 'games' },
+            'Games 3': { template: 'Games.pdf', category: 'games' },
+            'Games 4': { template: 'Games.pdf', category: 'games' }
+        };
+
+        // Font and positioning configuration for title certificates
+        const titleCertificateConfig = {
+            // Registration number positioning (top left area)
+            registrationNumber: {
+                x: 105,  // Left side position
+                y: 780,  // Near top
+                size: 14,
+                font: 'Calibri',
+                color: [0, 0, 0], // Black
+                align: 'left'
+            },
+            
+            // Handler name positioning (center area)
+            handlerName: {
+                x: 396,  // Center X
+                y: 540,  // Upper middle
+                size: 24,
+                font: 'Calibri',
+                color: [0, 0, 0], // Black
+                align: 'center'
+            },
+            
+            // Dog name positioning (center, below handler)
+            dogName: {
+                x: 396,  // Center X
+                y: 500,  // Below handler
+                size: 28,
+                font: 'Calibri',
+                color: [0, 0, 0], // Black
+                align: 'center'
+            },
+            
+            // Date positioning (in sentence area)
+            dateEarned: {
+                x: 180,  // In the sentence
+                y: 380,
+                size: 14,
+                font: 'Calibri',
+                color: [0, 0, 0], // Black
+                align: 'left'
+            },
+            
+            // Title abbreviation positioning (bottom right, above signature)
+            titleAbbreviation: {
+                x: 396,  // Bottom right area
+                y: 320,  // Above signature
+                size: 30,
+                font: 'Maiandra GD',
+                fontWeight: 'Bold',
+                color: [0, 0, 0.5], // #000080 (Navy blue)
+                align: 'center'
+            }
+        };
+
+        // Ace certificate configuration (different positioning and fonts)
+        const aceCertificateConfig = {
+            // For Ace certificates - different template and positioning
+            handlerName: {
+                x: 396,
+                y: 580,  // Different Y position for Ace template
+                size: 28,
+                font: 'Calibri',
+                color: [0, 0, 0],
+                align: 'center'
+            },
+            
+            dogName: {
+                x: 396,
+                y: 540,  // Different Y position for Ace template
+                size: 32,
+                font: 'Calibri',
+                color: [0, 0, 0],
+                align: 'center'
+            },
+            
+            // Ace certificates show level + "Ace" designation
+            aceDesignation: {
+                x: 396,
+                y: 300,
+                size: 28,
+                font: 'Maiandra GD',
+                fontWeight: 'Bold',
+                color: [0.6, 0.2, 0.8], // Purple for Ace
+                align: 'center'
+            }
+        };
+        
+        // Level prerequisites mapping
+        const prerequisites = {
+            "Investigator 3": ["Patrol 1", "Detective 2"],
+            "Super Sleuth 4": ["Investigator 3"],
+            "Private Inv": ["Super Sleuth 4"],
+            "Det Diversions": ["Super Sleuth 4"],
+            "Ranger 2": ["Ranger 1"],
+            "Ranger 3": ["Ranger 2"],
+            "Ranger 4": ["Ranger 3"],
+            "Ranger 5": ["Ranger 4"],
+            "Dasher 4": ["Dasher 3"],
+            "Dasher 5": ["Dasher 4"],
+            "Dasher 6": ["Dasher 5"],
+            "Obedience 4": ["Obedience 3"],
+            "Obedience 5": ["Obedience 4"]
+        };
+
+        // Official title abbreviations
+        const titleAbbreviations = {
+            "Patrol 1": "CW-SP",
+            "Detective 2": "CW-SD",
+            "Investigator 3": "CW-SI",
+            "Super Sleuth 4": "CW-SS",
+            "Private Inv": "CW-SPI",
+            "Det Diversions": "CW-SDD",
+            "Ranger 1": "CW-ScR1",
+            "Ranger 2": "CW-ScR2",
+            "Ranger 3": "CW-ScR3",
+            "Ranger 4": "CW-ScR4",
+            "Ranger 5": "CW-ScR5",
+            "Dasher 3": "CW-SD3",
+            "Dasher 4": "CW-SD4",
+            "Dasher 5": "CW-SD5",
+            "Dasher 6": "CW-SD6",
+            "Obedience 1": "CW-Ob1",
+            "Obedience 2": "CW-Ob2",
+            "Obedience 3": "CW-Ob3",
+            "Obedience 4": "CW-Ob4",
+            "Obedience 5": "CW-Ob5",
+            "Starter": "CW-SR",
+            "Advanced": "CW-AR",
+            "Pro": "CW-PR",
+            "ARF": "CW-ARF",
+            "Zoom 1": "CW-ZR1",
+            "Zoom 1.5": "CW-ZR1.5",
+            "Zoom 2": "CW-ZR2",
+            "Games 1": "CW-G1",
+            "Games 2": "CW-G2",
+            "Games 3": "CW-G3",
+            "Games 4": "CW-G4"
+        };
+
+        // Proper level ordering
+        const levelOrder = [
+            "Patrol 1", "Detective 2", "Investigator 3", "Super Sleuth 4", "Private Inv", "Det Diversions",
+            "Ranger 1", "Ranger 2", "Ranger 3", "Ranger 4", "Ranger 5",
+            "Dasher 3", "Dasher 4", "Dasher 5", "Dasher 6",
+            "Obedience 1", "Obedience 2", "Obedience 3", "Obedience 4", "Obedience 5",
+            "Starter", "Advanced", "Pro", "ARF",
+            "Zoom 1", "Zoom 1.5", "Zoom 2",
+            "Games 1", "Games 2", "Games 3", "Games 4"
+        ];
+
+        async function generateTitleCertificate(level, regNumber, dogName, abbreviation) {
+            try {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Generating...';
+                btn.disabled = true;
+
+                // Get template info
+                const templateInfo = certificateTemplateMapping[level];
+                if (!templateInfo) {
+                    throw new Error(`No certificate template found for ${level}`);
+                }
+
+                // Get dog's records for this level
+                const levelRecords = trialingData.filter(r => 
+                    r.registrationNumber === regNumber && r.level === level
+                );
+
+                if (levelRecords.length === 0) {
+                    throw new Error('No records found for this level');
+                }
+
+                // Calculate date earned
+                const titleInfo = calculateTitlePoints(levelRecords);
+                const dateEarned = titleInfo.titleDate ? titleInfo.titleDate.toLocaleDateString() : new Date().toLocaleDateString();
+
+                // Create a simple PDF certificate (since templates may not be available)
+                const pdfDoc = await PDFLib.PDFDocument.create();
+                const page = pdfDoc.addPage([612, 792]); // Letter size
+                const { width, height } = page.getSize();
+
+                // Embed font
+                const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+                const boldFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+
+                // Header
+                page.drawText('C-WAGS TITLE CERTIFICATE', {
+                    x: width / 2 - 150,
+                    y: height - 100,
+                    size: 24,
+                    font: boldFont,
+                    color: PDFLib.rgb(0, 0, 0.5)
+                });
+
+                // Dog name
+                page.drawText(`${dogName}`, {
+                    x: width / 2 - (dogName.length * 8),
+                    y: height - 200,
+                    size: 32,
+                    font: boldFont,
+                    color: PDFLib.rgb(0, 0, 0)
+                });
+
+                // Registration number
+                page.drawText(`Registration: ${regNumber}`, {
+                    x: 50,
+                    y: height - 250,
+                    size: 14,
+                    font: font,
+                    color: PDFLib.rgb(0, 0, 0)
+                });
+
+                // Title text
+                page.drawText(`Has successfully earned the title of`, {
+                    x: width / 2 - 120,
+                    y: height - 320,
+                    size: 16,
+                    font: font,
+                    color: PDFLib.rgb(0, 0, 0)
+                });
+
+                // Level and abbreviation
+                page.drawText(`${level} (${abbreviation})`, {
+                    x: width / 2 - (level.length * 6),
+                    y: height - 380,
+                    size: 28,
+                    font: boldFont,
+                    color: PDFLib.rgb(0, 0, 0.5)
+                });
+
+                // Date
+                page.drawText(`Date Earned: ${dateEarned}`, {
+                    x: 50,
+                    y: height - 450,
+                    size: 14,
+                    font: font,
+                    color: PDFLib.rgb(0, 0, 0)
+                });
+
+                // Footer
+                page.drawText('Congratulations on this achievement!', {
+                    x: width / 2 - 100,
+                    y: 100,
+                    size: 16,
+                    font: font,
+                    color: PDFLib.rgb(0, 0, 0)
+                });
+
+                // Save and download
+                const pdfBytes = await pdfDoc.save();
+                downloadPDF(pdfBytes, `${dogName}-${level.replace(/\s+/g, '-')}-Title-Certificate.pdf`);
+
+                btn.textContent = originalText;
+                btn.disabled = false;
+
+            } catch (error) {
+                console.error('Certificate generation error:', error);
+                alert(`Unable to generate certificate: ${error.message}`);
+                
+                const btn = event.target;
+                btn.textContent = 'Generate Title Certificate';
+                btn.disabled = false;
+            }
+        }
+
+        async function generateAceCertificate(level, regNumber, dogName, aceCount) {
+            try {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Generating...';
+                btn.disabled = true;
+
+                const abbreviation = titleAbbreviations[level] || level;
+                const aceDesignation = aceCount === 1 ? `${abbreviation}A` : `${abbreviation}Ax${aceCount}`;
+
+                // Create PDF
+                const pdfDoc = await PDFLib.PDFDocument.create();
+                const page = pdfDoc.addPage([612, 792]);
+                const { width, height } = page.getSize();
+
+                const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+                const boldFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+
+                // Header
+                page.drawText('C-WAGS ACE CERTIFICATE', {
+                    x: width / 2 - 140,
+                    y: height - 100,
+                    size: 24,
+                    font: boldFont,
+                    color: PDFLib.rgb(0.6, 0.2, 0.8)
+                });
+
+                // Dog name
+                page.drawText(`${dogName}`, {
+                    x: width / 2 - (dogName.length * 8),
+                    y: height - 200,
+                    size: 32,
+                    font: boldFont,
+                    color: PDFLib.rgb(0, 0, 0)
+                });
+
+                // Ace designation
+                page.drawText(`${aceDesignation}`, {
+                    x: width / 2 - (aceDesignation.length * 10),
+                    y: height - 300,
+                    size: 36,
+                    font: boldFont,
+                    color: PDFLib.rgb(0.6, 0.2, 0.8)
+                });
+
+                // Achievement text
+                page.drawText(`Has achieved ${aceCount} Ace award${aceCount > 1 ? 's' : ''} in ${level}`, {
+                    x: width / 2 - 120,
+                    y: height - 380,
+                    size: 16,
+                    font: font,
+                    color: PDFLib.rgb(0, 0, 0)
+                });
+
+                // Footer
+                page.drawText('Outstanding performance and dedication!', {
+                    x: width / 2 - 110,
+                    y: 100,
+                    size: 16,
+                    font: font,
+                    color: PDFLib.rgb(0.6, 0.2, 0.8)
+                });
+
+                const pdfBytes = await pdfDoc.save();
+                downloadPDF(pdfBytes, `${dogName}-${level.replace(/\s+/g, '-')}-Ace-Certificate.pdf`);
+
+                btn.textContent = originalText;
+                btn.disabled = false;
+
+            } catch (error) {
+                console.error('Ace certificate generation error:', error);
+                alert(`Unable to generate certificate: ${error.message}`);
+                
+                const btn = event.target;
+                btn.textContent = 'Generate Ace Certificate';
+                btn.disabled = false;
+            }
+        }
+
+        function downloadPDF(pdfBytes, filename) {
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.click();
+            
+            URL.revokeObjectURL(url);
+        }
