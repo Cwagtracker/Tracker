@@ -174,133 +174,71 @@
             'Games 3': 'Games 3',
             'Games 4': 'Games 4'
         };
-        async function generateCertificate(level, regNumber) {
+        async function generateSpecificCertificate(certType, level, regNumber, dogName, abbreviation, template) {
             try {
                 const btn = event.target;
                 const originalText = btn.textContent;
                 btn.textContent = 'Generating...';
                 btn.disabled = true;
 
-                // Get dog data from current loaded data (trialingData)
-                const dogRecords = trialingData.filter(record => record.registrationNumber === regNumber);
-                if (dogRecords.length === 0) throw new Error('Dog data not found');
-                
-                const dogData = dogRecords[0]; // Get basic info from first record
-                
-                // Check if this is an Ace certificate
-                const levelRecords = dogRecords.filter(r => r.level === level);
-                const isAceCertificate = checkIfAceCertificate(levelRecords, level);
-                
-                if (isAceCertificate) {
-                    await generateAceCertificateFromLevel(level, regNumber, dogData, levelRecords);
-                } else {
-                    await generateTitleCertificate(level, regNumber, dogData, levelRecords);
+                // Get dog's records for this level
+                const levelRecords = trialingData.filter(r => 
+                    r.registrationNumber === regNumber && r.level === level
+                );
+
+                if (levelRecords.length === 0) {
+                    throw new Error('No records found for this level');
                 }
+
+                // Calculate date earned if it's a title certificate
+                let dateEarned = new Date().toLocaleDateString();
+                if (certType === 'title') {
+                    const titleInfo = calculateTitlePoints(levelRecords);
+                    dateEarned = titleInfo.titleDate ? titleInfo.titleDate.toLocaleDateString() : dateEarned;
+                }
+
+                // Load the correct template from GitHub
+                const templateUrl = `https://raw.githubusercontent.com/YOURUSERNAME/cwags-certificates/main/templates/${template}`;
+                const response = await fetch(templateUrl);
+                if (!response.ok) {
+                    throw new Error(`Certificate template not found: ${template}`);
+                }
+                
+                const templateBytes = await response.arrayBuffer();
+
+                // Generate the certificate based on type
+                let pdfBytes;
+                if (certType === 'title') {
+                    pdfBytes = await createTitleCertificateWithOverlay(templateBytes, {
+                        registrationNumber: regNumber,
+                        handlerName: '', // Leave blank as requested
+                        dogName: dogName,
+                        dateEarned: dateEarned,
+                        titleAbbreviation: abbreviation
+                    });
+                } else { // ace certificate
+                    pdfBytes = await createAceCertificateWithOverlay(templateBytes, {
+                        handlerName: '', // Leave blank as requested
+                        dogName: dogName,
+                        aceDesignation: abbreviation
+                    });
+                }
+
+                // Download the certificate
+                const filename = `${dogName}-${level.replace(/\s+/g, '-')}-${certType === 'title' ? 'Title' : 'Ace'}-Certificate.pdf`;
+                downloadPDF(pdfBytes, filename);
 
                 btn.textContent = originalText;
                 btn.disabled = false;
 
             } catch (error) {
                 console.error('Certificate generation error:', error);
-                alert(`Unable to generate certificate: ${error.message}`);
+                alert(`Unable to generate certificate: ${error.message}\n\nPlease ensure the certificate templates are uploaded to GitHub.`);
                 
                 const btn = event.target;
-                btn.textContent = 'Generate Certificate';
+                btn.textContent = 'Generate PDF';
                 btn.disabled = false;
             }
-        }
-
-        function checkIfAceCertificate(levelRecords, level) {
-            // Check if dog has earned title AND has ace points
-            let totalPoints = 0;
-            const judges = new Set();
-            
-            levelRecords.forEach(record => {
-                if (record.points > 0) {
-                    totalPoints += record.points;
-                    if (record.judge) judges.add(record.judge);
-                }
-            });
-            
-            const hasTitleRequirements = totalPoints >= 4 && judges.size >= 2;
-            if (!hasTitleRequirements) return false;
-            
-            const titleInfo = calculateTitlePoints(levelRecords);
-            const acePoints = Math.max(0, totalPoints - titleInfo.titlePoints);
-            
-            return acePoints >= 10; // Has at least 1 Ace
-        }
-
-        async function generateTitleCertificate(level, regNumber, dogData, levelRecords) {
-            // Get the appropriate template
-            const templateInfo = certificateTemplateMapping[level];
-            if (!templateInfo) throw new Error(`No certificate template found for ${level}`);
-
-            // Load template from GitHub
-            const templateUrl = `https://raw.githubusercontent.com/yourusername/cwags-certificates/main/templates/${templateInfo.template}`;
-            const response = await fetch(templateUrl);
-            if (!response.ok) throw new Error(`Certificate template not found: ${templateInfo.template}`);
-            
-            const templateBytes = await response.arrayBuffer();
-
-            // Get title abbreviation
-            const titleAbbrev = titleAbbreviations[level] || level;
-            
-            // Get date title was earned
-            const titleInfo = calculateTitlePoints(levelRecords);
-            const dateEarned = titleInfo.titleDate ? titleInfo.titleDate.toLocaleDateString() : new Date().toLocaleDateString();
-
-            // Generate the certificate
-            const pdfBytes = await createTitleCertificateWithOverlay(templateBytes, {
-                registrationNumber: dogData.registrationNumber,
-                handlerName: `${dogData.handlerFirstName || ''} ${dogData.handlerLastName || ''}`.trim() || 'Handler Name',
-                dogName: dogData.callName || 'Dog Name',
-                dateEarned: dateEarned,
-                titleAbbreviation: titleAbbrev
-            });
-
-            // Download the certificate
-            downloadPDF(pdfBytes, `${dogData.callName}-${level}-Title-Certificate.pdf`);
-        }
-
-        async function generateAceCertificateFromLevel(level, regNumber, dogData, levelRecords) {
-            // Calculate how many Aces this dog has earned
-            const titleInfo = calculateTitlePoints(levelRecords);
-            let totalPoints = 0;
-            levelRecords.forEach(record => {
-                if (record.points > 0) totalPoints += record.points;
-            });
-            
-            const acePoints = Math.max(0, totalPoints - titleInfo.titlePoints);
-            const aceCount = Math.floor(acePoints / 10);
-            
-            if (aceCount === 0) throw new Error('No Aces earned yet');
-
-            // Load Ace template
-            const templateUrl = `https://raw.githubusercontent.com/yourusername/cwags-certificates/main/templates/Ace.pdf`;
-            const response = await fetch(templateUrl);
-            if (!response.ok) throw new Error('Ace certificate template not found');
-            
-            const templateBytes = await response.arrayBuffer();
-
-            // Create Ace designation
-            const titleAbbrev = titleAbbreviations[level] || level;
-            let aceDesignation;
-            if (aceCount === 1) {
-                aceDesignation = `${titleAbbrev}A`;
-            } else {
-                aceDesignation = `${titleAbbrev}Ax${aceCount}`;
-            }
-
-            // Generate the Ace certificate
-            const pdfBytes = await createAceCertificateWithOverlay(templateBytes, {
-                handlerName: `${dogData.handlerFirstName || ''} ${dogData.handlerLastName || ''}`.trim() || 'Handler Name',
-                dogName: dogData.callName || 'Dog Name',
-                aceDesignation: aceDesignation
-            });
-
-            // Download the certificate
-            downloadPDF(pdfBytes, `${dogData.callName}-${level}-Ace-x${aceCount}-Certificate.pdf`);
         }
 
         async function createTitleCertificateWithOverlay(templateBytes, data) {
@@ -323,18 +261,9 @@
                 color: PDFLib.rgb(regConfig.color[0], regConfig.color[1], regConfig.color[2])
             });
 
-            // Add handler name (center area)
-            const handlerConfig = titleCertificateConfig.handlerName;
-            const handlerTextWidth = calibriFont.widthOfTextAtSize(data.handlerName, handlerConfig.size);
-            const handlerX = handlerConfig.align === 'center' ? handlerConfig.x - (handlerTextWidth / 2) : handlerConfig.x;
-            
-            firstPage.drawText(data.handlerName, {
-                x: handlerX,
-                y: handlerConfig.y,
-                size: handlerConfig.size,
-                font: calibriFont,
-                color: PDFLib.rgb(handlerConfig.color[0], handlerConfig.color[1], handlerConfig.color[2])
-            });
+            // Add handler name (center area) - LEFT BLANK as requested
+            // const handlerConfig = titleCertificateConfig.handlerName;
+            // (Handler name intentionally left blank for manual entry)
 
             // Add dog name (center, below handler)
             const dogConfig = titleCertificateConfig.dogName;
@@ -385,18 +314,9 @@
             const pages = pdfDoc.getPages();
             const firstPage = pages[0];
             
-            // Add handler name for Ace certificate
-            const handlerConfig = aceCertificateConfig.handlerName;
-            const handlerTextWidth = calibriFont.widthOfTextAtSize(data.handlerName, handlerConfig.size);
-            const handlerX = handlerConfig.align === 'center' ? handlerConfig.x - (handlerTextWidth / 2) : handlerConfig.x;
-            
-            firstPage.drawText(data.handlerName, {
-                x: handlerX,
-                y: handlerConfig.y,
-                size: handlerConfig.size,
-                font: calibriFont,
-                color: PDFLib.rgb(handlerConfig.color[0], handlerConfig.color[1], handlerConfig.color[2])
-            });
+            // Add handler name for Ace certificate - LEFT BLANK as requested
+            // const handlerConfig = aceCertificateConfig.handlerName;
+            // (Handler name intentionally left blank for manual entry)
 
             // Add dog name for Ace certificate
             const dogConfig = aceCertificateConfig.dogName;
@@ -767,9 +687,21 @@
             transition: all 0.3s ease;
         }
 
-        .owner-view-btn:hover {
+        .certificates-btn {
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #6f42c1, #8e44ad);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .certificates-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
+            box-shadow: 0 10px 20px rgba(111, 66, 193, 0.3);
         }
 
 
@@ -1189,8 +1121,7 @@
                        onkeypress="handleKeyPress(event)">
                 <button class="search-btn" onclick="searchDog()">Search Dog Records</button>
                 <button class="owner-view-btn" onclick="showOwnerView()">Owner View by ID</button>
-                <button class="certificates-btn" onclick="showCertificatesView()">🏆 Certificates</button>
-                <small style="color: #666; font-size: 0.8rem;">v4.0 - Full Certificate System!</small>
+                <small style="color: #666; font-size: 0.8rem;">v4.0 - Certificate System on Dog Pages!</small>
             </div>
         </div>
 
