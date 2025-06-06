@@ -11,6 +11,629 @@
             box-sizing: border-box;
         }
 
+        // Certificate template mapping based on your structure
+        const certificateTemplateMapping = {
+            // Scent Work titles use Scent.pdf
+            'Patrol 1': { template: 'Scent.pdf', category: 'scent' },
+            'Detective 2': { template: 'Scent.pdf', category: 'scent' },
+            'Investigator 3': { template: 'Scent.pdf', category: 'scent' },
+            'Super Sleuth 4': { template: 'Scent.pdf', category: 'scent' },
+            'Private Inv': { template: 'Scent.pdf', category: 'scent' },
+            'Det Diversions': { template: 'Scent.pdf', category: 'scent' },
+            'Ranger 1': { template: 'Scent.pdf', category: 'scent' },
+            'Ranger 2': { template: 'Scent.pdf', category: 'scent' },
+            'Ranger 3': { template: 'Scent.pdf', category: 'scent' },
+            'Ranger 4': { template: 'Scent.pdf', category: 'scent' },
+            'Ranger 5': { template: 'Scent.pdf', category: 'scent' },
+            'Dasher 3': { template: 'Scent.pdf', category: 'scent' },
+            'Dasher 4': { template: 'Scent.pdf', category: 'scent' },
+            'Dasher 5': { template: 'Scent.pdf', category: 'scent' },
+            'Dasher 6': { template: 'Scent.pdf', category: 'scent' },
+            
+            // Obedience titles use Obedience.pdf
+            'Obedience 1': { template: 'Obedience.pdf', category: 'obedience' },
+            'Obedience 2': { template: 'Obedience.pdf', category: 'obedience' },
+            'Obedience 3': { template: 'Obedience.pdf', category: 'obedience' },
+            'Obedience 4': { template: 'Obedience.pdf', category: 'obedience' },
+            'Obedience 5': { template: 'Obedience.pdf', category: 'obedience' },
+            
+            // Rally titles use Rally.pdf
+            'Starter': { template: 'Rally.pdf', category: 'rally' },
+            'Advanced': { template: 'Rally.pdf', category: 'rally' },
+            'Pro': { template: 'Rally.pdf', category: 'rally' },
+            'ARF': { template: 'Rally.pdf', category: 'rally' },
+            'Zoom 1': { template: 'Rally.pdf', category: 'rally' },
+            'Zoom 1.5': { template: 'Rally.pdf', category: 'rally' },
+            'Zoom 2': { template: 'Rally.pdf', category: 'rally' },
+            
+            // Games titles use Games.pdf
+            'Games 1': { template: 'Games.pdf', category: 'games' },
+            'Games 2': { template: 'Games.pdf', category: 'games' },
+            'Games 3': { template: 'Games.pdf', category: 'games' },
+            'Games 4': { template: 'Games.pdf', category: 'games' }
+        };
+
+        // Font and positioning configuration for title certificates
+        const titleCertificateConfig = {
+            // Registration number positioning (top left area)
+            registrationNumber: {
+                x: 105,  // Left side position
+                y: 780,  // Near top
+                size: 14,
+                font: 'Calibri',
+                color: [0, 0, 0], // Black
+                align: 'left'
+            },
+            
+            // Handler name positioning (center area)
+            handlerName: {
+                x: 396,  // Center X
+                y: 540,  // Upper middle
+                size: 24,
+                font: 'Calibri',
+                color: [0, 0, 0], // Black
+                align: 'center'
+            },
+            
+            // Dog name positioning (center, below handler)
+            dogName: {
+                x: 396,  // Center X
+                y: 500,  // Below handler
+                size: 28,
+                font: 'Calibri',
+                color: [0, 0, 0], // Black
+                align: 'center'
+            },
+            
+            // Date positioning (in sentence area)
+            dateEarned: {
+                x: 180,  // In the sentence
+                y: 380,
+                size: 14,
+                font: 'Calibri',
+                color: [0, 0, 0], // Black
+                align: 'left'
+            },
+            
+            // Title abbreviation positioning (bottom right, above signature)
+            titleAbbreviation: {
+                x: 396,  // Bottom right area
+                y: 320,  // Above signature
+                size: 30,
+                font: 'Maiandra GD',
+                fontWeight: 'Bold',
+                color: [0, 0, 0.5], // #000080 (Navy blue)
+                align: 'center'
+            }
+        };
+
+        // Ace certificate configuration (different positioning and fonts)
+        const aceCertificateConfig = {
+            // For Ace certificates - different template and positioning
+            handlerName: {
+                x: 396,
+                y: 580,  // Different Y position for Ace template
+                size: 28,
+                font: 'Calibri',
+                color: [0, 0, 0],
+                align: 'center'
+            },
+            
+            dogName: {
+                x: 396,
+                y: 540,  // Different Y position for Ace template
+                size: 32,
+                font: 'Calibri',
+                color: [0, 0, 0],
+                align: 'center'
+            },
+            
+            // Ace certificates show level + "Ace" designation
+            aceDesignation: {
+                x: 396,
+                y: 300,
+                size: 28,
+                font: 'Maiandra GD',
+                fontWeight: 'Bold',
+                color: [0.6, 0.2, 0.8], // Purple for Ace
+                align: 'center'
+            }
+        };
+
+        // Level to certificate mapping
+        const levelToCertificate = {
+            'Patrol 1': 'Patrol 1',
+            'Detective 2': 'Detective 2', 
+            'Investigator 3': 'Investigator 3',
+            'Super Sleuth 4': 'Super Sleuth 4',
+            'Private Inv': 'Private Inv',
+            'Det Diversions': 'Det Diversions',
+            'Ranger 1': 'Ranger 1',
+            'Ranger 2': 'Ranger 2',
+            'Ranger 3': 'Ranger 3',
+            'Ranger 4': 'Ranger 4',
+            'Ranger 5': 'Ranger 5',
+            'Dasher 3': 'Dasher 3',
+            'Dasher 4': 'Dasher 4',
+            'Dasher 5': 'Dasher 5',
+            'Dasher 6': 'Dasher 6',
+            'Obedience 1': 'Obedience 1',
+            'Obedience 2': 'Obedience 2',
+            'Obedience 3': 'Obedience 3',
+            'Obedience 4': 'Obedience 4',
+            'Obedience 5': 'Obedience 5',
+            'Starter': 'Starter',
+            'Advanced': 'Advanced',
+            'Pro': 'Pro',
+            'ARF': 'ARF',
+            'Zoom 1': 'Zoom 1',
+            'Zoom 1.5': 'Zoom 1.5',
+            'Zoom 2': 'Zoom 2',
+            'Games 1': 'Games 1',
+            'Games 2': 'Games 2',
+            'Games 3': 'Games 3',
+            'Games 4': 'Games 4'
+        };
+        async function generateCertificate(level, regNumber) {
+            try {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Generating...';
+                btn.disabled = true;
+
+                // Get dog data from current loaded data (trialingData)
+                const dogRecords = trialingData.filter(record => record.registrationNumber === regNumber);
+                if (dogRecords.length === 0) throw new Error('Dog data not found');
+                
+                const dogData = dogRecords[0]; // Get basic info from first record
+                
+                // Check if this is an Ace certificate
+                const levelRecords = dogRecords.filter(r => r.level === level);
+                const isAceCertificate = checkIfAceCertificate(levelRecords, level);
+                
+                if (isAceCertificate) {
+                    await generateAceCertificateFromLevel(level, regNumber, dogData, levelRecords);
+                } else {
+                    await generateTitleCertificate(level, regNumber, dogData, levelRecords);
+                }
+
+                btn.textContent = originalText;
+                btn.disabled = false;
+
+            } catch (error) {
+                console.error('Certificate generation error:', error);
+                alert(`Unable to generate certificate: ${error.message}`);
+                
+                const btn = event.target;
+                btn.textContent = 'Generate Certificate';
+                btn.disabled = false;
+            }
+        }
+
+        function checkIfAceCertificate(levelRecords, level) {
+            // Check if dog has earned title AND has ace points
+            let totalPoints = 0;
+            const judges = new Set();
+            
+            levelRecords.forEach(record => {
+                if (record.points > 0) {
+                    totalPoints += record.points;
+                    if (record.judge) judges.add(record.judge);
+                }
+            });
+            
+            const hasTitleRequirements = totalPoints >= 4 && judges.size >= 2;
+            if (!hasTitleRequirements) return false;
+            
+            const titleInfo = calculateTitlePoints(levelRecords);
+            const acePoints = Math.max(0, totalPoints - titleInfo.titlePoints);
+            
+            return acePoints >= 10; // Has at least 1 Ace
+        }
+
+        async function generateTitleCertificate(level, regNumber, dogData, levelRecords) {
+            // Get the appropriate template
+            const templateInfo = certificateTemplateMapping[level];
+            if (!templateInfo) throw new Error(`No certificate template found for ${level}`);
+
+            // Load template from GitHub
+            const templateUrl = `https://raw.githubusercontent.com/yourusername/cwags-certificates/main/templates/${templateInfo.template}`;
+            const response = await fetch(templateUrl);
+            if (!response.ok) throw new Error(`Certificate template not found: ${templateInfo.template}`);
+            
+            const templateBytes = await response.arrayBuffer();
+
+            // Get title abbreviation
+            const titleAbbrev = titleAbbreviations[level] || level;
+            
+            // Get date title was earned
+            const titleInfo = calculateTitlePoints(levelRecords);
+            const dateEarned = titleInfo.titleDate ? titleInfo.titleDate.toLocaleDateString() : new Date().toLocaleDateString();
+
+            // Generate the certificate
+            const pdfBytes = await createTitleCertificateWithOverlay(templateBytes, {
+                registrationNumber: dogData.registrationNumber,
+                handlerName: `${dogData.handlerFirstName || ''} ${dogData.handlerLastName || ''}`.trim() || 'Handler Name',
+                dogName: dogData.callName || 'Dog Name',
+                dateEarned: dateEarned,
+                titleAbbreviation: titleAbbrev
+            });
+
+            // Download the certificate
+            downloadPDF(pdfBytes, `${dogData.callName}-${level}-Title-Certificate.pdf`);
+        }
+
+        async function generateAceCertificateFromLevel(level, regNumber, dogData, levelRecords) {
+            // Calculate how many Aces this dog has earned
+            const titleInfo = calculateTitlePoints(levelRecords);
+            let totalPoints = 0;
+            levelRecords.forEach(record => {
+                if (record.points > 0) totalPoints += record.points;
+            });
+            
+            const acePoints = Math.max(0, totalPoints - titleInfo.titlePoints);
+            const aceCount = Math.floor(acePoints / 10);
+            
+            if (aceCount === 0) throw new Error('No Aces earned yet');
+
+            // Load Ace template
+            const templateUrl = `https://raw.githubusercontent.com/yourusername/cwags-certificates/main/templates/Ace.pdf`;
+            const response = await fetch(templateUrl);
+            if (!response.ok) throw new Error('Ace certificate template not found');
+            
+            const templateBytes = await response.arrayBuffer();
+
+            // Create Ace designation
+            const titleAbbrev = titleAbbreviations[level] || level;
+            let aceDesignation;
+            if (aceCount === 1) {
+                aceDesignation = `${titleAbbrev}A`;
+            } else {
+                aceDesignation = `${titleAbbrev}Ax${aceCount}`;
+            }
+
+            // Generate the Ace certificate
+            const pdfBytes = await createAceCertificateWithOverlay(templateBytes, {
+                handlerName: `${dogData.handlerFirstName || ''} ${dogData.handlerLastName || ''}`.trim() || 'Handler Name',
+                dogName: dogData.callName || 'Dog Name',
+                aceDesignation: aceDesignation
+            });
+
+            // Download the certificate
+            downloadPDF(pdfBytes, `${dogData.callName}-${level}-Ace-x${aceCount}-Certificate.pdf`);
+        }
+
+        async function createTitleCertificateWithOverlay(templateBytes, data) {
+            const pdfDoc = await PDFLib.PDFDocument.load(templateBytes);
+            
+            // Embed fonts (using standard fonts for now, can be enhanced later)
+            const calibriFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+            const maiandraFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold); // Fallback for Maiandra GD
+            
+            const pages = pdfDoc.getPages();
+            const firstPage = pages[0];
+            
+            // Add registration number (top left)
+            const regConfig = titleCertificateConfig.registrationNumber;
+            firstPage.drawText(data.registrationNumber, {
+                x: regConfig.x,
+                y: regConfig.y,
+                size: regConfig.size,
+                font: calibriFont,
+                color: PDFLib.rgb(regConfig.color[0], regConfig.color[1], regConfig.color[2])
+            });
+
+            // Add handler name (center area)
+            const handlerConfig = titleCertificateConfig.handlerName;
+            const handlerTextWidth = calibriFont.widthOfTextAtSize(data.handlerName, handlerConfig.size);
+            const handlerX = handlerConfig.align === 'center' ? handlerConfig.x - (handlerTextWidth / 2) : handlerConfig.x;
+            
+            firstPage.drawText(data.handlerName, {
+                x: handlerX,
+                y: handlerConfig.y,
+                size: handlerConfig.size,
+                font: calibriFont,
+                color: PDFLib.rgb(handlerConfig.color[0], handlerConfig.color[1], handlerConfig.color[2])
+            });
+
+            // Add dog name (center, below handler)
+            const dogConfig = titleCertificateConfig.dogName;
+            const dogTextWidth = calibriFont.widthOfTextAtSize(data.dogName, dogConfig.size);
+            const dogX = dogConfig.align === 'center' ? dogConfig.x - (dogTextWidth / 2) : dogConfig.x;
+            
+            firstPage.drawText(data.dogName, {
+                x: dogX,
+                y: dogConfig.y,
+                size: dogConfig.size,
+                font: calibriFont,
+                color: PDFLib.rgb(dogConfig.color[0], dogConfig.color[1], dogConfig.color[2])
+            });
+
+            // Add date earned
+            const dateConfig = titleCertificateConfig.dateEarned;
+            firstPage.drawText(data.dateEarned, {
+                x: dateConfig.x,
+                y: dateConfig.y,
+                size: dateConfig.size,
+                font: calibriFont,
+                color: PDFLib.rgb(dateConfig.color[0], dateConfig.color[1], dateConfig.color[2])
+            });
+
+            // Add title abbreviation (bottom right, Maiandra GD Bold, size 30, navy blue)
+            const titleConfig = titleCertificateConfig.titleAbbreviation;
+            const titleTextWidth = maiandraFont.widthOfTextAtSize(data.titleAbbreviation, titleConfig.size);
+            const titleX = titleConfig.align === 'center' ? titleConfig.x - (titleTextWidth / 2) : titleConfig.x;
+            
+            firstPage.drawText(data.titleAbbreviation, {
+                x: titleX,
+                y: titleConfig.y,
+                size: titleConfig.size,
+                font: maiandraFont,
+                color: PDFLib.rgb(titleConfig.color[0], titleConfig.color[1], titleConfig.color[2])
+            });
+            
+            return await pdfDoc.save();
+        }
+
+        async function createAceCertificateWithOverlay(templateBytes, data) {
+            const pdfDoc = await PDFLib.PDFDocument.load(templateBytes);
+            
+            // Embed fonts
+            const calibriFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+            const maiandraFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+            
+            const pages = pdfDoc.getPages();
+            const firstPage = pages[0];
+            
+            // Add handler name for Ace certificate
+            const handlerConfig = aceCertificateConfig.handlerName;
+            const handlerTextWidth = calibriFont.widthOfTextAtSize(data.handlerName, handlerConfig.size);
+            const handlerX = handlerConfig.align === 'center' ? handlerConfig.x - (handlerTextWidth / 2) : handlerConfig.x;
+            
+            firstPage.drawText(data.handlerName, {
+                x: handlerX,
+                y: handlerConfig.y,
+                size: handlerConfig.size,
+                font: calibriFont,
+                color: PDFLib.rgb(handlerConfig.color[0], handlerConfig.color[1], handlerConfig.color[2])
+            });
+
+            // Add dog name for Ace certificate
+            const dogConfig = aceCertificateConfig.dogName;
+            const dogTextWidth = calibriFont.widthOfTextAtSize(data.dogName, dogConfig.size);
+            const dogX = dogConfig.align === 'center' ? dogConfig.x - (dogTextWidth / 2) : dogConfig.x;
+            
+            firstPage.drawText(data.dogName, {
+                x: dogX,
+                y: dogConfig.y,
+                size: dogConfig.size,
+                font: calibriFont,
+                color: PDFLib.rgb(dogConfig.color[0], dogConfig.color[1], dogConfig.color[2])
+            });
+
+            // Add Ace designation (purple color for distinction)
+            const aceConfig = aceCertificateConfig.aceDesignation;
+            const aceTextWidth = maiandraFont.widthOfTextAtSize(data.aceDesignation, aceConfig.size);
+            const aceX = aceConfig.align === 'center' ? aceConfig.x - (aceTextWidth / 2) : aceConfig.x;
+            
+            firstPage.drawText(data.aceDesignation, {
+                x: aceX,
+                y: aceConfig.y,
+                size: aceConfig.size,
+                font: maiandraFont,
+                color: PDFLib.rgb(aceConfig.color[0], aceConfig.color[1], aceConfig.color[2])
+            });
+            
+            return await pdfDoc.save();
+        }
+
+        async function createCertificateWithOverlay(templateBytes, config, data) {
+            const pdfDoc = await PDFLib.PDFDocument.load(templateBytes);
+            const helveticaFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+            const helveticaBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+            
+            const pages = pdfDoc.getPages();
+            const firstPage = pages[0];
+            
+            // Add text overlays based on configuration
+            Object.entries(config.fields).forEach(([fieldName, fieldConfig]) => {
+                const text = data[fieldName] || '';
+                if (!text) return;
+                
+                let x = fieldConfig.x;
+                const font = fieldConfig.size > 20 ? helveticaBold : helveticaFont;
+                
+                // Handle text alignment
+                if (fieldConfig.align === 'center') {
+                    const textWidth = font.widthOfTextAtSize(text, fieldConfig.size);
+                    x = fieldConfig.x - (textWidth / 2);
+                } else if (fieldConfig.align === 'right') {
+                    const textWidth = font.widthOfTextAtSize(text, fieldConfig.size);
+                    x = fieldConfig.x - textWidth;
+                }
+                
+                firstPage.drawText(text, {
+                    x: x,
+                    y: fieldConfig.y,
+                    size: fieldConfig.size,
+                    font: font,
+                    color: PDFLib.rgb(fieldConfig.color[0], fieldConfig.color[1], fieldConfig.color[2])
+                });
+            });
+            
+            return await pdfDoc.save();
+        }
+
+        function downloadPDF(pdfBytes, filename) {
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.click();
+            
+            URL.revokeObjectURL(url);
+        }
+            try {
+                // Show loading indicator
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Loading...';
+                btn.disabled = true;
+                
+                // Get certificate template from GitHub
+                const templateUrl = `https://raw.githubusercontent.com/yourusername/cwags-certificates/main/${level.toLowerCase().replace(/\s+/g, '-')}-certificate.pdf`;
+                
+                // Download the template
+                const response = await fetch(templateUrl);
+                if (!response.ok) {
+                    throw new Error(`Certificate template not found for ${level}`);
+                }
+                
+                const templateBlob = await response.blob();
+                
+                // Get owner info (you'll need to implement this based on your data structure)
+                const ownerInfo = await getOwnerInfo(dogInfo.regNumber);
+                
+                // Create filled certificate
+                await fillCertificate(templateBlob, {
+                    dogName: dogInfo.callName,
+                    handlerName: ownerInfo.handlerName,
+                    registrationNumber: dogInfo.regNumber,
+                    level: level,
+                    dateEarned: dogInfo.titleDate || new Date().toLocaleDateString(),
+                    ownerName: ownerInfo.ownerName
+                });
+                
+                // Restore button
+                btn.textContent = originalText;
+                btn.disabled = false;
+                
+            } catch (error) {
+                console.error('Certificate generation error:', error);
+                alert(`Unable to generate certificate: ${error.message}\n\nPlease ensure certificate templates are available in the GitHub repository.`);
+                
+                // Restore button
+                const btn = event.target;
+                btn.textContent = 'Print Certificate';
+                btn.disabled = false;
+            }
+        }
+
+        async function getOwnerInfo(regNumber) {
+            // Extract owner ID from registration number (format: YY-OWNERID-DOG)
+            const parts = regNumber.split('-');
+            const ownerId = parts[1];
+            
+            // In a real implementation, this would fetch from your data source
+            // For now, return placeholder data
+            return {
+                ownerName: `Owner ${ownerId}`,
+                handlerName: `Handler ${ownerId}`,
+                ownerId: ownerId
+            };
+        }
+
+        async function fillCertificate(templateBlob, certData) {
+            // Create a new PDF with the filled data
+            const pdf = await PDFLib.PDFDocument.load(await templateBlob.arrayBuffer());
+            
+            // Get the form (assuming the PDF has fillable fields)
+            const form = pdf.getForm();
+            
+            try {
+                // Fill the form fields (field names should match your PDF templates)
+                const fields = form.getFields();
+                console.log('Available fields:', fields.map(f => f.getName()));
+                
+                // Common field mappings
+                const fieldMappings = {
+                    'dogName': certData.dogName,
+                    'dog_name': certData.dogName,
+                    'handlerName': certData.handlerName,
+                    'handler_name': certData.handlerName,
+                    'registrationNumber': certData.registrationNumber,
+                    'registration_number': certData.registrationNumber,
+                    'level': certData.level,
+                    'dateEarned': certData.dateEarned,
+                    'date_earned': certData.dateEarned,
+                    'ownerName': certData.ownerName,
+                    'owner_name': certData.ownerName
+                };
+                
+                // Fill available fields
+                Object.entries(fieldMappings).forEach(([fieldName, value]) => {
+                    try {
+                        const field = form.getField(fieldName);
+                        if (field) {
+                            field.setText(value);
+                        }
+                    } catch (e) {
+                        // Field doesn't exist, continue
+                    }
+                });
+                
+                // Flatten the form to prevent further editing
+                form.flatten();
+                
+            } catch (error) {
+                console.log('No fillable form found, adding text overlay');
+                // If no form fields, add text directly to the PDF
+                await addTextOverlay(pdf, certData);
+            }
+            
+            // Save and download the PDF
+            const pdfBytes = await pdf.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${certData.dogName}-${certData.level}-Certificate.pdf`;
+            link.click();
+            
+            // Clean up
+            URL.revokeObjectURL(url);
+        }
+
+        async function addTextOverlay(pdf, certData) {
+            // Add text overlay if no form fields are available
+            const pages = pdf.getPages();
+            const firstPage = pages[0];
+            const { width, height } = firstPage.getSize();
+            
+            // You'll need to adjust these coordinates based on your certificate templates
+            firstPage.drawText(certData.dogName, {
+                x: width * 0.5,
+                y: height * 0.6,
+                size: 24,
+                color: PDFLib.rgb(0, 0, 0),
+            });
+            
+            firstPage.drawText(certData.handlerName, {
+                x: width * 0.5,
+                y: height * 0.5,
+                size: 18,
+                color: PDFLib.rgb(0, 0, 0),
+            });
+            
+            firstPage.drawText(certData.registrationNumber, {
+                x: width * 0.5,
+                y: height * 0.4,
+                size: 14,
+                color: PDFLib.rgb(0, 0, 0),
+            });
+            
+            firstPage.drawText(certData.dateEarned, {
+                x: width * 0.5,
+                y: height * 0.3,
+                size: 14,
+                color: PDFLib.rgb(0, 0, 0),
+            });
+        }
+
         function searchDogFromOwnerView(regNumber) {
             // Fill in the search input with the registration number
             document.getElementById('searchInput').value = regNumber;
@@ -566,7 +1189,8 @@
                        onkeypress="handleKeyPress(event)">
                 <button class="search-btn" onclick="searchDog()">Search Dog Records</button>
                 <button class="owner-view-btn" onclick="showOwnerView()">Owner View by ID</button>
-                <small style="color: #666; font-size: 0.8rem;">v1.4</small>
+                <button class="certificates-btn" onclick="showCertificatesView()">🏆 Certificates</button>
+                <small style="color: #666; font-size: 0.8rem;">v4.0 - Full Certificate System!</small>
             </div>
         </div>
 
