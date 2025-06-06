@@ -544,7 +544,28 @@
             "Games 1", "Games 2", "Games 3", "Games 4"
         ];
 
-        // Certificate template mapping - maps levels to their template files
+        /*
+        FONT NOTES:
+        - Times-Roman-Bold is the closest to Maiandra GD among PDF-lib standard fonts
+        - You CAN load custom TTF files! Here's how:
+        
+        1. Upload TTF file to your GitHub repository (e.g., /fonts/MaiandraGD.ttf)
+        2. Use this code to load it:
+        
+        const fontUrl = 'https://raw.githubusercontent.com/cwagtracker/Tracker/main/fonts/MaiandraGD.ttf';
+        const fontResponse = await fetch(fontUrl);
+        const fontBytes = await fontResponse.arrayBuffer();
+        const customFont = await pdfDoc.embedFont(fontBytes);
+        
+        Then use customFont instead of timesBold for the title text.
+        
+        POSITIONING NOTES (titleCertificateConfig):
+        - All measurements are in PDF points (72 points = 1 inch)
+        - Landscape 8.5x11 = 792 x 612 points
+        - Y coordinates start from bottom (0) and go up
+        - X coordinates start from left (0) and go right
+        - Current positions based on screenshot analysis
+        */
         const certificateTemplateMapping = {
             // Scent Work titles use Scent.pdf
             'Patrol 1': { template: 'Scent.pdf', category: 'scent' },
@@ -587,41 +608,49 @@
         };
 
         // Font and positioning configuration for title certificates (8.5x11 landscape = 792x612)
+        // Based on actual certificate template screenshot
         const titleCertificateConfig = {
-            // Registration number positioning (under "this certifies that the team of")
+            // Registration number positioning (under "This certifies that the team of")
             registrationNumber: {
-                x: 300,  // Adjust based on your template layout
-                y: 480,  // Under the "team of" text
+                x: 445,  // Right under "team of"
+                y: 490,  // Just below the line
                 size: 12,
                 color: [0, 0, 0] // Black
             },
             
-            // Dog name positioning (under the & symbol, centered with it)
-            dogName: {
-                x: 396,  // Center X (792/2) - will be adjusted for centering
-                y: 420,  // Under the & symbol
+            // Handler name positioning (where "Karen Yuen" appears)
+            handlerName: {
+                x: 396,  // Center X (792/2)
+                y: 440,  // Above the &
                 size: 24,
                 color: [0, 0, 0], // Black
                 align: 'center'
             },
             
-            // Date positioning (in sentence "On <<Date>>, has completed...")
+            // Dog name positioning (under the & symbol, centered - "Luka")
+            dogName: {
+                x: 396,  // Center X (792/2) 
+                y: 380,  // Under the & symbol
+                size: 24,
+                color: [0, 0, 0], // Black
+                align: 'center'
+            },
+            
+            // Date positioning (in sentence "On 08/25/2023, has completed...")
             dateEarned: {
-                x: 120,  // After "On " in the sentence
-                y: 350,  // In the sentence area
+                x: 372,  // After "On " in the sentence
+                y: 310,  // In the sentence area
                 size: 12,
                 color: [0, 0, 0] // Black
             },
             
-            // Title abbreviation positioning (level with top of yellow sphere)
+            // Title and abbreviation positioning (right-justified, 3/4" from right border)
             titleAbbreviation: {
-                x: 396,  // Center X
-                y: 150,  // Level with top of yellow sphere in bottom left
-                size: 28,
-                font: 'Maiandra GD',
-                fontWeight: 'Bold',
-                color: [0, 0, 0.5], // Navy blue
-                align: 'center'
+                x: 738,  // 3/4" from right border (792 - 54 = 738)
+                y: 260,  // Level with middle of certificate
+                size: 18,
+                color: [0, 0, 0.8], // Blue to match template
+                align: 'right' // Right-justified
             }
         };
 
@@ -672,21 +701,12 @@
                 const pages = pdfDoc.getPages();
                 const firstPage = pages[0];
                 
-                // Embed fonts - try Maiandra GD first, fallback to Helvetica Bold
+                // Embed fonts - Times-Bold is closest to Maiandra GD
                 const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
                 const boldFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
-                
-                // Try to use Maiandra GD for title, fallback to bold Helvetica
-                let titleFont = boldFont;
-                try {
-                    // Note: Maiandra GD is not available in PDF-lib standard fonts
-                    // Using Helvetica Bold as the closest alternative
-                    titleFont = boldFont;
-                } catch (e) {
-                    titleFont = boldFont;
-                }
+                const timesBold = await pdfDoc.embedFont(PDFLib.StandardFonts.TimesRomanBold);
 
-                // Add registration number (under "this certifies that the team of")
+                // Add registration number (under "This certifies that the team of")
                 const regConfig = titleCertificateConfig.registrationNumber;
                 firstPage.drawText(regNumber, {
                     x: regConfig.x,
@@ -696,7 +716,11 @@
                     color: PDFLib.rgb(regConfig.color[0], regConfig.color[1], regConfig.color[2])
                 });
 
-                // Add dog name (under the & symbol, centered)
+                // Add handler name (where "Karen Yuen" appears) - leave blank for manual entry
+                const handlerConfig = titleCertificateConfig.handlerName;
+                // Intentionally left blank - handlers will fill this in manually
+
+                // Add dog name (under the & symbol, centered - where "Luka" appears)
                 const dogConfig = titleCertificateConfig.dogName;
                 const dogTextWidth = boldFont.widthOfTextAtSize(dogName, dogConfig.size);
                 const dogX = dogConfig.align === 'center' ? dogConfig.x - (dogTextWidth / 2) : dogConfig.x;
@@ -714,7 +738,7 @@
                 
                 // Draw "On " first
                 firstPage.drawText('On ', {
-                    x: dateConfig.x - 20, // Start a bit before the date position
+                    x: dateConfig.x - 20,
                     y: dateConfig.y,
                     size: dateConfig.size,
                     font: font,
@@ -740,16 +764,19 @@
                     color: PDFLib.rgb(dateConfig.color[0], dateConfig.color[1], dateConfig.color[2])
                 });
 
-                // Add title abbreviation (level with top of yellow sphere, Maiandra GD style)
+                // Add title and abbreviation (right-justified, 3/4" from right border)
                 const titleConfig = titleCertificateConfig.titleAbbreviation;
-                const titleTextWidth = titleFont.widthOfTextAtSize(abbreviation, titleConfig.size);
-                const titleX = titleConfig.align === 'center' ? titleConfig.x - (titleTextWidth / 2) : titleConfig.x;
                 
-                firstPage.drawText(abbreviation, {
+                // Format: "Patrol Level 1  (CW-SP)" - with brackets like in sample
+                const titleText = `${level}  (${abbreviation})`;
+                const titleTextWidth = timesBold.widthOfTextAtSize(titleText, titleConfig.size);
+                const titleX = titleConfig.align === 'right' ? titleConfig.x - titleTextWidth : titleConfig.x;
+                
+                firstPage.drawText(titleText, {
                     x: titleX,
                     y: titleConfig.y,
                     size: titleConfig.size,
-                    font: titleFont,
+                    font: timesBold, // Times Bold is closest to Maiandra GD
                     color: PDFLib.rgb(titleConfig.color[0], titleConfig.color[1], titleConfig.color[2])
                 });
 
