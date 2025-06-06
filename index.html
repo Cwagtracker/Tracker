@@ -477,7 +477,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-    <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
+    <script src="https://unpkg.com/fontkit@2.0.2/dist/fontkit.umd.js"></script>
     <script>
         let trialingData = [];
         let currentDogRecords = [];
@@ -701,7 +701,12 @@
                 const pdfDoc = await PDFLib.PDFDocument.load(templateBytes);
                 
                 // Register fontkit for custom font support
-                pdfDoc.registerFontkit(fontkit);
+                if (typeof fontkit !== 'undefined') {
+                    pdfDoc.registerFontkit(fontkit);
+                    console.log('✅ Fontkit registered successfully');
+                } else {
+                    console.error('❌ Fontkit library not loaded');
+                }
                 
                 const pages = pdfDoc.getPages();
                 const firstPage = pages[0];
@@ -731,13 +736,33 @@
                             console.log('Font bytes loaded, size:', fontBytes.byteLength);
                             
                             try {
+                                console.log('Attempting to embed font with PDF-lib...');
                                 maiandraFont = await pdfDoc.embedFont(fontBytes);
                                 console.log('✅ Maiandra GD font successfully embedded!');
                                 fontLoaded = true;
                                 break; // Success! Stop trying other URLs
                             } catch (embedError) {
-                                console.error('❌ Font embedding failed:', embedError);
-                                console.log('This might be a corrupted TTF file or unsupported format');
+                                console.error('❌ Font embedding failed:', embedError.message);
+                                console.log('Full error:', embedError);
+                                
+                                // Try to provide more specific error info
+                                if (embedError.message.includes('fontkit')) {
+                                    console.log('💡 Fontkit issue - trying without fontkit registration...');
+                                    
+                                    // Try creating a new PDF doc without fontkit
+                                    try {
+                                        const tempDoc = await PDFLib.PDFDocument.create();
+                                        const tempFont = await tempDoc.embedFont(fontBytes);
+                                        console.log('✅ Font works without fontkit - using standard embedding');
+                                        maiandraFont = await pdfDoc.embedFont(fontBytes, { subset: false });
+                                        fontLoaded = true;
+                                        break;
+                                    } catch (tempError) {
+                                        console.log('❌ Font file appears to be invalid or corrupted');
+                                    }
+                                } else {
+                                    console.log('This might be a corrupted TTF file or unsupported format');
+                                }
                             }
                         }
                     } catch (fontError) {
