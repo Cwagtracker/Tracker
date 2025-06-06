@@ -608,46 +608,46 @@
         };
 
         // Font and positioning configuration for title certificates (8.5x11 landscape = 792x612)
-        // Based on actual certificate template screenshot
+        // Based on actual certificate template screenshot - CORRECTED Y coordinates
         const titleCertificateConfig = {
-            // Registration number positioning (under "This certifies that the team of")
+            // Registration number positioning (NEAR TOP of page)
             registrationNumber: {
                 x: 445,  // Right under "team of"
-                y: 490,  // Just below the line
+                y: 520,  // Near top (higher Y = closer to top)
                 size: 12,
                 color: [0, 0, 0] // Black
             },
             
-            // Handler name positioning (where "Karen Yuen" appears)
+            // Handler name positioning (BELOW reg number - "Karen Yuen")
             handlerName: {
                 x: 396,  // Center X (792/2)
-                y: 440,  // Above the &
+                y: 470,  // Below registration number
                 size: 24,
                 color: [0, 0, 0], // Black
                 align: 'center'
             },
             
-            // Dog name positioning (under the & symbol, centered - "Luka")
+            // Dog name positioning (BELOW handler - under & symbol - "Luka")
             dogName: {
                 x: 396,  // Center X (792/2) 
-                y: 380,  // Under the & symbol
+                y: 420,  // Below handler name
                 size: 24,
                 color: [0, 0, 0], // Black
                 align: 'center'
             },
             
-            // Date positioning (in sentence "On 08/25/2023, has completed...")
+            // Date positioning (MIDDLE of sheet - "On 08/25/2023, has completed...")
             dateEarned: {
                 x: 372,  // After "On " in the sentence
-                y: 310,  // In the sentence area
+                y: 310,  // Middle of page vertically (612/2 ≈ 306)
                 size: 12,
                 color: [0, 0, 0] // Black
             },
             
-            // Title and abbreviation positioning (right-justified, 3/4" from right border)
+            // Title and abbreviation positioning (LOWER area, right-justified)
             titleAbbreviation: {
                 x: 738,  // 3/4" from right border (792 - 54 = 738)
-                y: 260,  // Level with middle of certificate
+                y: 200,  // Lower area of certificate
                 size: 18,
                 color: [0, 0, 0.8], // Blue to match template
                 align: 'right' // Right-justified
@@ -705,6 +705,19 @@
                 const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
                 const boldFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
                 const timesBold = await pdfDoc.embedFont(PDFLib.StandardFonts.TimesRomanBold);
+
+                // Load custom Maiandra font from repository
+                let maiandraFont = timesBold; // Fallback
+                try {
+                    const fontUrl = 'https://raw.githubusercontent.com/cwagtracker/Tracker/main/fonts/Maiandra.TTF';
+                    const fontResponse = await fetch(fontUrl);
+                    if (fontResponse.ok) {
+                        const fontBytes = await fontResponse.arrayBuffer();
+                        maiandraFont = await pdfDoc.embedFont(fontBytes);
+                    }
+                } catch (fontError) {
+                    console.warn('Could not load Maiandra font, using Times Bold fallback');
+                }
 
                 // Add registration number (under "This certifies that the team of")
                 const regConfig = titleCertificateConfig.registrationNumber;
@@ -776,7 +789,7 @@
                     x: titleX,
                     y: titleConfig.y,
                     size: titleConfig.size,
-                    font: timesBold, // Times Bold is closest to Maiandra GD
+                    font: maiandraFont, // Use Maiandra font if available
                     color: PDFLib.rgb(titleConfig.color[0], titleConfig.color[1], titleConfig.color[2])
                 });
 
