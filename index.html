@@ -588,39 +588,40 @@
 
         // Font and positioning configuration for title certificates (8.5x11 landscape = 792x612)
         const titleCertificateConfig = {
-            // Registration number positioning (top left area)
+            // Registration number positioning (under "this certifies that the team of")
             registrationNumber: {
-                x: 50,   // Left margin
-                y: 570,  // Near top (landscape orientation)
+                x: 300,  // Adjust based on your template layout
+                y: 480,  // Under the "team of" text
                 size: 12,
                 color: [0, 0, 0] // Black
             },
             
-            // Dog name positioning (center area) 
+            // Dog name positioning (under the & symbol, centered with it)
             dogName: {
-                x: 396,  // Center X (792/2)
-                y: 400,  // Center area
-                size: 28,
+                x: 396,  // Center X (792/2) - will be adjusted for centering
+                y: 420,  // Under the & symbol
+                size: 24,
                 color: [0, 0, 0], // Black
                 align: 'center'
             },
             
-            // Date positioning 
+            // Date positioning (in sentence "On <<Date>>, has completed...")
             dateEarned: {
-                x: 150,  // Left side of sentence area
-                y: 250,  // Lower area
+                x: 120,  // After "On " in the sentence
+                y: 350,  // In the sentence area
                 size: 12,
                 color: [0, 0, 0] // Black
             },
             
-            // Title abbreviation positioning (prominent display)
+            // Title abbreviation positioning (level with top of yellow sphere)
             titleAbbreviation: {
                 x: 396,  // Center X
-                y: 180,  // Below other text
-                size: 24,
+                y: 150,  // Level with top of yellow sphere in bottom left
+                size: 28,
+                font: 'Maiandra GD',
+                fontWeight: 'Bold',
                 color: [0, 0, 0.5], // Navy blue
-                align: 'center',
-                weight: 'bold'
+                align: 'center'
             }
         };
 
@@ -671,11 +672,21 @@
                 const pages = pdfDoc.getPages();
                 const firstPage = pages[0];
                 
-                // Embed fonts
+                // Embed fonts - try Maiandra GD first, fallback to Helvetica Bold
                 const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
                 const boldFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+                
+                // Try to use Maiandra GD for title, fallback to bold Helvetica
+                let titleFont = boldFont;
+                try {
+                    // Note: Maiandra GD is not available in PDF-lib standard fonts
+                    // Using Helvetica Bold as the closest alternative
+                    titleFont = boldFont;
+                } catch (e) {
+                    titleFont = boldFont;
+                }
 
-                // Add registration number
+                // Add registration number (under "this certifies that the team of")
                 const regConfig = titleCertificateConfig.registrationNumber;
                 firstPage.drawText(regNumber, {
                     x: regConfig.x,
@@ -685,9 +696,9 @@
                     color: PDFLib.rgb(regConfig.color[0], regConfig.color[1], regConfig.color[2])
                 });
 
-                // Add dog name (centered)
+                // Add dog name (under the & symbol, centered)
                 const dogConfig = titleCertificateConfig.dogName;
-                const dogTextWidth = font.widthOfTextAtSize(dogName, dogConfig.size);
+                const dogTextWidth = boldFont.widthOfTextAtSize(dogName, dogConfig.size);
                 const dogX = dogConfig.align === 'center' ? dogConfig.x - (dogTextWidth / 2) : dogConfig.x;
                 
                 firstPage.drawText(dogName, {
@@ -698,8 +709,19 @@
                     color: PDFLib.rgb(dogConfig.color[0], dogConfig.color[1], dogConfig.color[2])
                 });
 
-                // Add date earned
+                // Add date in sentence format: "On [Date], has completed the requirements for the title of"
                 const dateConfig = titleCertificateConfig.dateEarned;
+                
+                // Draw "On " first
+                firstPage.drawText('On ', {
+                    x: dateConfig.x - 20, // Start a bit before the date position
+                    y: dateConfig.y,
+                    size: dateConfig.size,
+                    font: font,
+                    color: PDFLib.rgb(dateConfig.color[0], dateConfig.color[1], dateConfig.color[2])
+                });
+                
+                // Draw the date
                 firstPage.drawText(dateEarned, {
                     x: dateConfig.x,
                     y: dateConfig.y,
@@ -707,17 +729,27 @@
                     font: font,
                     color: PDFLib.rgb(dateConfig.color[0], dateConfig.color[1], dateConfig.color[2])
                 });
+                
+                // Draw ", has completed the requirements for the title of" after the date
+                const dateWidth = font.widthOfTextAtSize(dateEarned, dateConfig.size);
+                firstPage.drawText(', has completed the requirements for the title of', {
+                    x: dateConfig.x + dateWidth,
+                    y: dateConfig.y,
+                    size: dateConfig.size,
+                    font: font,
+                    color: PDFLib.rgb(dateConfig.color[0], dateConfig.color[1], dateConfig.color[2])
+                });
 
-                // Add title abbreviation (centered, bold, navy blue)
+                // Add title abbreviation (level with top of yellow sphere, Maiandra GD style)
                 const titleConfig = titleCertificateConfig.titleAbbreviation;
-                const titleTextWidth = boldFont.widthOfTextAtSize(abbreviation, titleConfig.size);
+                const titleTextWidth = titleFont.widthOfTextAtSize(abbreviation, titleConfig.size);
                 const titleX = titleConfig.align === 'center' ? titleConfig.x - (titleTextWidth / 2) : titleConfig.x;
                 
                 firstPage.drawText(abbreviation, {
                     x: titleX,
                     y: titleConfig.y,
                     size: titleConfig.size,
-                    font: boldFont,
+                    font: titleFont,
                     color: PDFLib.rgb(titleConfig.color[0], titleConfig.color[1], titleConfig.color[2])
                 });
 
