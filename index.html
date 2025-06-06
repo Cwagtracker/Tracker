@@ -544,12 +544,98 @@
             "Games 1", "Games 2", "Games 3", "Games 4"
         ];
 
+        // Certificate template mapping - maps levels to their template files
+        const certificateTemplateMapping = {
+            // Scent Work titles use Scent.pdf
+            'Patrol 1': { template: 'Scent.pdf', category: 'scent' },
+            'Detective 2': { template: 'Scent.pdf', category: 'scent' },
+            'Investigator 3': { template: 'Scent.pdf', category: 'scent' },
+            'Super Sleuth 4': { template: 'Scent.pdf', category: 'scent' },
+            'Private Inv': { template: 'Scent.pdf', category: 'scent' },
+            'Det Diversions': { template: 'Scent.pdf', category: 'scent' },
+            'Ranger 1': { template: 'Scent.pdf', category: 'scent' },
+            'Ranger 2': { template: 'Scent.pdf', category: 'scent' },
+            'Ranger 3': { template: 'Scent.pdf', category: 'scent' },
+            'Ranger 4': { template: 'Scent.pdf', category: 'scent' },
+            'Ranger 5': { template: 'Scent.pdf', category: 'scent' },
+            'Dasher 3': { template: 'Scent.pdf', category: 'scent' },
+            'Dasher 4': { template: 'Scent.pdf', category: 'scent' },
+            'Dasher 5': { template: 'Scent.pdf', category: 'scent' },
+            'Dasher 6': { template: 'Scent.pdf', category: 'scent' },
+            
+            // Obedience titles use Obedience.pdf
+            'Obedience 1': { template: 'Obedience.pdf', category: 'obedience' },
+            'Obedience 2': { template: 'Obedience.pdf', category: 'obedience' },
+            'Obedience 3': { template: 'Obedience.pdf', category: 'obedience' },
+            'Obedience 4': { template: 'Obedience.pdf', category: 'obedience' },
+            'Obedience 5': { template: 'Obedience.pdf', category: 'obedience' },
+            
+            // Rally titles use Rally.pdf
+            'Starter': { template: 'Rally.pdf', category: 'rally' },
+            'Advanced': { template: 'Rally.pdf', category: 'rally' },
+            'Pro': { template: 'Rally.pdf', category: 'rally' },
+            'ARF': { template: 'Rally.pdf', category: 'rally' },
+            'Zoom 1': { template: 'Rally.pdf', category: 'rally' },
+            'Zoom 1.5': { template: 'Rally.pdf', category: 'rally' },
+            'Zoom 2': { template: 'Rally.pdf', category: 'rally' },
+            
+            // Games titles use Games.pdf
+            'Games 1': { template: 'Games.pdf', category: 'games' },
+            'Games 2': { template: 'Games.pdf', category: 'games' },
+            'Games 3': { template: 'Games.pdf', category: 'games' },
+            'Games 4': { template: 'Games.pdf', category: 'games' }
+        };
+
+        // Font and positioning configuration for title certificates (8.5x11 landscape = 792x612)
+        const titleCertificateConfig = {
+            // Registration number positioning (top left area)
+            registrationNumber: {
+                x: 50,   // Left margin
+                y: 570,  // Near top (landscape orientation)
+                size: 12,
+                color: [0, 0, 0] // Black
+            },
+            
+            // Dog name positioning (center area) 
+            dogName: {
+                x: 396,  // Center X (792/2)
+                y: 400,  // Center area
+                size: 28,
+                color: [0, 0, 0], // Black
+                align: 'center'
+            },
+            
+            // Date positioning 
+            dateEarned: {
+                x: 150,  // Left side of sentence area
+                y: 250,  // Lower area
+                size: 12,
+                color: [0, 0, 0] // Black
+            },
+            
+            // Title abbreviation positioning (prominent display)
+            titleAbbreviation: {
+                x: 396,  // Center X
+                y: 180,  // Below other text
+                size: 24,
+                color: [0, 0, 0.5], // Navy blue
+                align: 'center',
+                weight: 'bold'
+            }
+        };
+
         async function generateTitleCertificate(level, regNumber, dogName, abbreviation) {
             try {
                 const btn = event.target;
                 const originalText = btn.textContent;
                 btn.textContent = 'Generating...';
                 btn.disabled = true;
+
+                // Get template info
+                const templateInfo = certificateTemplateMapping[level];
+                if (!templateInfo) {
+                    throw new Error(`No certificate template mapped for level: ${level}`);
+                }
 
                 // Get dog's records for this level
                 const levelRecords = trialingData.filter(r => 
@@ -564,76 +650,76 @@
                 const titleInfo = calculateTitlePoints(levelRecords);
                 const dateEarned = titleInfo.titleDate ? titleInfo.titleDate.toLocaleDateString() : new Date().toLocaleDateString();
 
-                // Create a simple PDF certificate
-                const pdfDoc = await PDFLib.PDFDocument.create();
-                const page = pdfDoc.addPage([612, 792]); // Letter size
-                const { width, height } = page.getSize();
+                // Load the template from GitHub repository
+                // Replace 'YOURUSERNAME' and 'YOURREPO' with your actual GitHub details
+                const templateUrl = `https://raw.githubusercontent.com/YOURUSERNAME/YOURREPO/main/templates/${templateInfo.template}`;
+                
+                let templateBytes;
+                try {
+                    const response = await fetch(templateUrl);
+                    if (!response.ok) {
+                        throw new Error(`Template not found: ${templateUrl}`);
+                    }
+                    templateBytes = await response.arrayBuffer();
+                } catch (fetchError) {
+                    // Fallback to creating a basic certificate if template not available
+                    console.warn('Template not available, creating basic certificate:', fetchError);
+                    return await createFallbackCertificate(dogName, regNumber, level, abbreviation, dateEarned);
+                }
 
-                // Embed font
+                // Load the template PDF
+                const pdfDoc = await PDFLib.PDFDocument.load(templateBytes);
+                const pages = pdfDoc.getPages();
+                const firstPage = pages[0];
+                
+                // Embed fonts
                 const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
                 const boldFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
 
-                // Header
-                page.drawText('C-WAGS TITLE CERTIFICATE', {
-                    x: width / 2 - 150,
-                    y: height - 100,
-                    size: 24,
+                // Add registration number
+                const regConfig = titleCertificateConfig.registrationNumber;
+                firstPage.drawText(regNumber, {
+                    x: regConfig.x,
+                    y: regConfig.y,
+                    size: regConfig.size,
+                    font: font,
+                    color: PDFLib.rgb(regConfig.color[0], regConfig.color[1], regConfig.color[2])
+                });
+
+                // Add dog name (centered)
+                const dogConfig = titleCertificateConfig.dogName;
+                const dogTextWidth = font.widthOfTextAtSize(dogName, dogConfig.size);
+                const dogX = dogConfig.align === 'center' ? dogConfig.x - (dogTextWidth / 2) : dogConfig.x;
+                
+                firstPage.drawText(dogName, {
+                    x: dogX,
+                    y: dogConfig.y,
+                    size: dogConfig.size,
                     font: boldFont,
-                    color: PDFLib.rgb(0, 0, 0.5)
+                    color: PDFLib.rgb(dogConfig.color[0], dogConfig.color[1], dogConfig.color[2])
                 });
 
-                // Dog name
-                page.drawText(dogName, {
-                    x: width / 2 - (dogName.length * 8),
-                    y: height - 200,
-                    size: 32,
+                // Add date earned
+                const dateConfig = titleCertificateConfig.dateEarned;
+                firstPage.drawText(dateEarned, {
+                    x: dateConfig.x,
+                    y: dateConfig.y,
+                    size: dateConfig.size,
+                    font: font,
+                    color: PDFLib.rgb(dateConfig.color[0], dateConfig.color[1], dateConfig.color[2])
+                });
+
+                // Add title abbreviation (centered, bold, navy blue)
+                const titleConfig = titleCertificateConfig.titleAbbreviation;
+                const titleTextWidth = boldFont.widthOfTextAtSize(abbreviation, titleConfig.size);
+                const titleX = titleConfig.align === 'center' ? titleConfig.x - (titleTextWidth / 2) : titleConfig.x;
+                
+                firstPage.drawText(abbreviation, {
+                    x: titleX,
+                    y: titleConfig.y,
+                    size: titleConfig.size,
                     font: boldFont,
-                    color: PDFLib.rgb(0, 0, 0)
-                });
-
-                // Registration number
-                page.drawText(`Registration: ${regNumber}`, {
-                    x: 50,
-                    y: height - 250,
-                    size: 14,
-                    font: font,
-                    color: PDFLib.rgb(0, 0, 0)
-                });
-
-                // Title text
-                page.drawText('Has successfully earned the title of', {
-                    x: width / 2 - 120,
-                    y: height - 320,
-                    size: 16,
-                    font: font,
-                    color: PDFLib.rgb(0, 0, 0)
-                });
-
-                // Level and abbreviation
-                page.drawText(`${level} (${abbreviation})`, {
-                    x: width / 2 - (level.length * 6),
-                    y: height - 380,
-                    size: 28,
-                    font: boldFont,
-                    color: PDFLib.rgb(0, 0, 0.5)
-                });
-
-                // Date
-                page.drawText(`Date Earned: ${dateEarned}`, {
-                    x: 50,
-                    y: height - 450,
-                    size: 14,
-                    font: font,
-                    color: PDFLib.rgb(0, 0, 0)
-                });
-
-                // Footer
-                page.drawText('Congratulations on this achievement!', {
-                    x: width / 2 - 100,
-                    y: 100,
-                    size: 16,
-                    font: font,
-                    color: PDFLib.rgb(0, 0, 0)
+                    color: PDFLib.rgb(titleConfig.color[0], titleConfig.color[1], titleConfig.color[2])
                 });
 
                 // Save and download
@@ -645,12 +731,56 @@
 
             } catch (error) {
                 console.error('Certificate generation error:', error);
-                alert(`Unable to generate certificate: ${error.message}`);
+                alert(`Unable to generate certificate: ${error.message}\n\nPlease check that the certificate templates are available in your GitHub repository.`);
                 
                 const btn = event.target;
                 btn.textContent = '📜 Title Certificate';
                 btn.disabled = false;
             }
+        }
+
+        // Fallback function to create basic certificate if template isn't available
+        async function createFallbackCertificate(dogName, regNumber, level, abbreviation, dateEarned) {
+            const pdfDoc = await PDFLib.PDFDocument.create();
+            const page = pdfDoc.addPage([792, 612]); // Landscape 8.5x11
+            const { width, height } = page.getSize();
+
+            const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+            const boldFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+
+            // Header
+            page.drawText('C-WAGS TITLE CERTIFICATE', {
+                x: width / 2 - 120,
+                y: height - 80,
+                size: 20,
+                font: boldFont,
+                color: PDFLib.rgb(0, 0, 0.5)
+            });
+
+            // Dog name
+            page.drawText(dogName, {
+                x: width / 2 - (dogName.length * 8),
+                y: height - 200,
+                size: 28,
+                font: boldFont,
+                color: PDFLib.rgb(0, 0, 0)
+            });
+
+            // Level and abbreviation
+            page.drawText(`${level} (${abbreviation})`, {
+                x: width / 2 - 80,
+                y: height - 300,
+                size: 20,
+                font: boldFont,
+                color: PDFLib.rgb(0, 0, 0.5)
+            });
+
+            // Registration and date
+            page.drawText(`Registration: ${regNumber}`, { x: 50, y: height - 400, size: 12, font: font });
+            page.drawText(`Date Earned: ${dateEarned}`, { x: 50, y: height - 420, size: 12, font: font });
+
+            const pdfBytes = await pdfDoc.save();
+            downloadPDF(pdfBytes, `${dogName}-${level.replace(/\s+/g, '-')}-Title-Certificate.pdf`);
         }
 
         async function generateAceCertificate(level, regNumber, dogName, aceCount) {
@@ -663,59 +793,89 @@
                 const abbreviation = titleAbbreviations[level] || level;
                 const aceDesignation = aceCount === 1 ? `${abbreviation}A` : `${abbreviation}Ax${aceCount}`;
 
-                // Create PDF
-                const pdfDoc = await PDFLib.PDFDocument.create();
-                const page = pdfDoc.addPage([612, 792]);
-                const { width, height } = page.getSize();
+                // Get template info (Ace certificates use the same templates as titles)
+                const templateInfo = certificateTemplateMapping[level];
+                if (!templateInfo) {
+                    throw new Error(`No certificate template mapped for level: ${level}`);
+                }
 
+                // Load the template from GitHub repository
+                const templateUrl = `https://raw.githubusercontent.com/YOURUSERNAME/YOURREPO/main/templates/${templateInfo.template}`;
+                
+                let templateBytes;
+                try {
+                    const response = await fetch(templateUrl);
+                    if (!response.ok) {
+                        throw new Error(`Template not found: ${templateUrl}`);
+                    }
+                    templateBytes = await response.arrayBuffer();
+                } catch (fetchError) {
+                    // Fallback to creating a basic ace certificate
+                    console.warn('Template not available, creating basic ace certificate:', fetchError);
+                    return await createFallbackAceCertificate(dogName, regNumber, level, aceDesignation, aceCount);
+                }
+
+                // Load the template PDF
+                const pdfDoc = await PDFLib.PDFDocument.load(templateBytes);
+                const pages = pdfDoc.getPages();
+                const firstPage = pages[0];
+                
+                // Embed fonts
                 const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
                 const boldFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
 
-                // Header
-                page.drawText('C-WAGS ACE CERTIFICATE', {
-                    x: width / 2 - 140,
-                    y: height - 100,
-                    size: 24,
-                    font: boldFont,
-                    color: PDFLib.rgb(0.6, 0.2, 0.8)
+                // Add registration number (smaller/less prominent for Ace)
+                firstPage.drawText(regNumber, {
+                    x: 50,
+                    y: 570,
+                    size: 10,
+                    font: font,
+                    color: PDFLib.rgb(0.5, 0.5, 0.5) // Gray
                 });
 
-                // Dog name
-                page.drawText(dogName, {
-                    x: width / 2 - (dogName.length * 8),
-                    y: height - 200,
+                // Add dog name (centered, same as title)
+                const dogTextWidth = boldFont.widthOfTextAtSize(dogName, 28);
+                firstPage.drawText(dogName, {
+                    x: 396 - (dogTextWidth / 2), // Center in landscape
+                    y: 420,
+                    size: 28,
+                    font: boldFont,
+                    color: PDFLib.rgb(0, 0, 0)
+                });
+
+                // Add "ACE AWARD" text
+                const aceText = 'ACE AWARD';
+                const aceTextWidth = boldFont.widthOfTextAtSize(aceText, 20);
+                firstPage.drawText(aceText, {
+                    x: 396 - (aceTextWidth / 2),
+                    y: 350,
+                    size: 20,
+                    font: boldFont,
+                    color: PDFLib.rgb(0.6, 0.2, 0.8) // Purple
+                });
+
+                // Add ace designation (prominent, purple)
+                const aceDesignationWidth = boldFont.widthOfTextAtSize(aceDesignation, 32);
+                firstPage.drawText(aceDesignation, {
+                    x: 396 - (aceDesignationWidth / 2),
+                    y: 280,
                     size: 32,
                     font: boldFont,
-                    color: PDFLib.rgb(0, 0, 0)
+                    color: PDFLib.rgb(0.6, 0.2, 0.8) // Purple
                 });
 
-                // Ace designation
-                page.drawText(aceDesignation, {
-                    x: width / 2 - (aceDesignation.length * 10),
-                    y: height - 300,
-                    size: 36,
-                    font: boldFont,
-                    color: PDFLib.rgb(0.6, 0.2, 0.8)
-                });
-
-                // Achievement text
-                page.drawText(`Has achieved ${aceCount} Ace award${aceCount > 1 ? 's' : ''} in ${level}`, {
-                    x: width / 2 - 120,
-                    y: height - 380,
-                    size: 16,
+                // Add achievement note
+                const achievementText = `${aceCount} Ace Award${aceCount > 1 ? 's' : ''} in ${level}`;
+                const achievementWidth = font.widthOfTextAtSize(achievementText, 14);
+                firstPage.drawText(achievementText, {
+                    x: 396 - (achievementWidth / 2),
+                    y: 220,
+                    size: 14,
                     font: font,
                     color: PDFLib.rgb(0, 0, 0)
                 });
 
-                // Footer
-                page.drawText('Outstanding performance and dedication!', {
-                    x: width / 2 - 110,
-                    y: 100,
-                    size: 16,
-                    font: font,
-                    color: PDFLib.rgb(0.6, 0.2, 0.8)
-                });
-
+                // Save and download
                 const pdfBytes = await pdfDoc.save();
                 downloadPDF(pdfBytes, `${dogName}-${level.replace(/\s+/g, '-')}-Ace-Certificate.pdf`);
 
@@ -724,12 +884,64 @@
 
             } catch (error) {
                 console.error('Ace certificate generation error:', error);
-                alert(`Unable to generate certificate: ${error.message}`);
+                alert(`Unable to generate ace certificate: ${error.message}\n\nPlease check that the certificate templates are available in your GitHub repository.`);
                 
                 const btn = event.target;
                 btn.textContent = '🏆 Ace Certificate';
                 btn.disabled = false;
             }
+        }
+
+        // Fallback function for Ace certificates
+        async function createFallbackAceCertificate(dogName, regNumber, level, aceDesignation, aceCount) {
+            const pdfDoc = await PDFLib.PDFDocument.create();
+            const page = pdfDoc.addPage([792, 612]); // Landscape 8.5x11
+            const { width, height } = page.getSize();
+
+            const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+            const boldFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+
+            // Header
+            page.drawText('C-WAGS ACE CERTIFICATE', {
+                x: width / 2 - 100,
+                y: height - 80,
+                size: 20,
+                font: boldFont,
+                color: PDFLib.rgb(0.6, 0.2, 0.8)
+            });
+
+            // Dog name
+            page.drawText(dogName, {
+                x: width / 2 - (dogName.length * 8),
+                y: height - 180,
+                size: 28,
+                font: boldFont,
+                color: PDFLib.rgb(0, 0, 0)
+            });
+
+            // Ace designation
+            page.drawText(aceDesignation, {
+                x: width / 2 - (aceDesignation.length * 10),
+                y: height - 260,
+                size: 32,
+                font: boldFont,
+                color: PDFLib.rgb(0.6, 0.2, 0.8)
+            });
+
+            // Achievement text
+            page.drawText(`Has achieved ${aceCount} Ace award${aceCount > 1 ? 's' : ''} in ${level}`, {
+                x: width / 2 - 120,
+                y: height - 340,
+                size: 16,
+                font: font,
+                color: PDFLib.rgb(0, 0, 0)
+            });
+
+            // Registration
+            page.drawText(`Registration: ${regNumber}`, { x: 50, y: height - 450, size: 12, font: font });
+
+            const pdfBytes = await pdfDoc.save();
+            downloadPDF(pdfBytes, `${dogName}-${level.replace(/\s+/g, '-')}-Ace-Certificate.pdf`);
         }
 
         function downloadPDF(pdfBytes, filename) {
