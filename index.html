@@ -710,6 +710,14 @@
                 // Load the template PDF
                 const pdfDoc = await PDFLib.PDFDocument.load(templateBytes);
                 
+                // Register fontkit for custom font support
+                if (typeof fontkit !== 'undefined') {
+                    pdfDoc.registerFontkit(fontkit);
+                    console.log('✅ Fontkit registered successfully');
+                } else {
+                    console.error('❌ Fontkit library not loaded');
+                }
+                
                 const pages = pdfDoc.getPages();
                 const firstPage = pages[0];
                 
