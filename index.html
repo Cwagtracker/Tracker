@@ -1551,8 +1551,12 @@
             
             // Store raw data for handler lookup (includes headers)
             globalData = jsonData;
-            console.log('Loaded global data with', globalData.length, 'rows');
-            console.log('Sample row:', globalData[1]); // Show first data row (row 0 is headers)
+            console.log('📊 Loaded global data:');
+            console.log('- Total rows:', globalData.length);
+            console.log('- Headers (row 0):', globalData[0]);
+            console.log('- Sample data (row 1):', globalData[1]);
+            console.log('- Column H header:', globalData[0] ? globalData[0][7] : 'Not found');
+            console.log('- Sample Column H data:', globalData[1] ? globalData[1][7] : 'Not found');
             
             trialingData = jsonData.slice(1).map(row => {
                 let processedDate = row[2];
@@ -1578,6 +1582,8 @@
                     points: parseFloat(row[6]) || 0
                 };
             }).filter(record => record.registrationNumber && record.level);
+            
+            console.log('📋 Processed trialing data:', trialingData.length, 'records');
         }
 
         function updateLastUpdatedDate() {
