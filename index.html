@@ -1194,8 +1194,196 @@
                 alert('Please wait for trialing data to load');
                 return;
             }
-            // Owner view implementation would go here
-            alert('Owner view functionality - enter middle 4 digits');
+
+            document.getElementById('summaryContent').innerHTML = `
+                <div style="text-align: center; padding: 40px;">
+                    <h3 style="color: #17a2b8; margin-bottom: 20px;">👤 Owner View</h3>
+                    <p style="margin-bottom: 20px;">Enter the middle 4 digits from your registration number:</p>
+                    
+                    <div style="background: #f8f9fa; padding: 30px; border-radius: 12px; border: 2px solid #dee2e6; margin: 20px 0;">
+                        <input type="text" id="ownerIdInput" placeholder="e.g., 1734" 
+                               style="padding: 15px 20px; font-size: 1.2rem; border: 2px solid #ddd; border-radius: 10px; width: 200px; text-align: center;"
+                               onkeypress="handleOwnerKeyPress(event)" maxlength="4">
+                        <br><br>
+                        <button onclick="loadOwnerView()" style="background: #28a745; color: white; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; font-size: 1.1rem;">
+                            📊 Load Owner View
+                        </button>
+                    </div>
+                    
+                    <button onclick="backToSearch()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                        ← Back to Search
+                    </button>
+                </div>
+            `;
+        }
+
+        function handleOwnerKeyPress(event) {
+            if (event.key === 'Enter') {
+                loadOwnerView();
+            }
+        }
+
+        function loadOwnerView() {
+            const ownerIdInput = document.getElementById('ownerIdInput');
+            if (!ownerIdInput) {
+                console.error('Owner ID input not found');
+                return;
+            }
+            
+            const ownerId = ownerIdInput.value.trim();
+            
+            if (!ownerId) {
+                alert('Please enter the middle 4 digits');
+                return;
+            }
+
+            if (!/^\d{4}$/.test(ownerId)) {
+                alert('Please enter exactly 4 digits');
+                return;
+            }
+
+            // Find all dogs with matching middle 4 digits
+            const matchingDogs = trialingData.filter(record => {
+                if (!record.registrationNumber) return false;
+                const regParts = record.registrationNumber.split('-');
+                return regParts.length >= 2 && regParts[1] === ownerId;
+            });
+
+            if (matchingDogs.length === 0) {
+                document.getElementById('summaryContent').innerHTML = `
+                    <div class="error-message">No dogs found with owner ID: <strong>${ownerId}</strong></div>
+                    <div style="text-align: center; margin-top: 20px;">
+                        <button onclick="showOwnerView()" style="background: #17a2b8; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
+                            ← Try Again
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            // Group by unique registration numbers
+            const dogsByReg = {};
+            matchingDogs.forEach(record => {
+                if (!dogsByReg[record.registrationNumber]) {
+                    dogsByReg[record.registrationNumber] = [];
+                }
+                dogsByReg[record.registrationNumber].push(record);
+            });
+
+            // Display owner's dogs
+            let html = `
+                <div style="background: #e7f3ff; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #b8daff;">
+                    <h3 style="color: #004085; margin-bottom: 10px;">👤 Owner ID: ${ownerId}</h3>
+                    <p style="color: #004085;">Found <strong>${Object.keys(dogsByReg).length}</strong> dog(s) registered to this owner</p>
+                </div>
+            `;
+
+            Object.keys(dogsByReg).forEach(regNumber => {
+                const dogRecords = dogsByReg[regNumber];
+                const dogName = dogRecords[0].callName || 'Unknown';
+                
+                // Get handler name
+                let handlerName = '';
+                if (globalData && globalData.length > 1) {
+                    const dogData = globalData.slice(1).find(row => 
+                        row && row[0] && row[0].toString().trim() === regNumber.toString().trim()
+                    );
+                    if (dogData && dogData[7]) {
+                        handlerName = dogData[7].toString().trim();
+                    }
+                }
+
+                // Calculate level summaries
+                const levelSummary = {};
+                dogRecords.forEach(record => {
+                    if (!record.level) return;
+                    
+                    if (!levelSummary[record.level]) {
+                        levelSummary[record.level] = {
+                            totalPoints: 0,
+                            judges: new Set(),
+                            records: []
+                        };
+                    }
+                    
+                    if (record.points > 0) {
+                        levelSummary[record.level].totalPoints += record.points;
+                        if (record.judge) {
+                            levelSummary[record.level].judges.add(record.judge);
+                        }
+                    }
+                    levelSummary[record.level].records.push(record);
+                });
+
+                // Count titles earned
+                let titlesEarned = 0;
+                Object.keys(levelSummary).forEach(level => {
+                    const summary = levelSummary[level];
+                    if (summary.totalPoints >= 4 && summary.judges.size >= 2) {
+                        titlesEarned++;
+                    }
+                });
+
+                html += `
+                    <div style="background: white; border: 1px solid #e9ecef; border-radius: 8px; padding: 20px; margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <div>
+                                <h4 style="color: #2c3e50; margin-bottom: 5px;">${dogName}</h4>
+                                ${handlerName ? `<p style="color: #6c757d; margin-bottom: 5px;"><strong>Handler:</strong> ${handlerName}</p>` : ''}
+                                <p style="color: #6c757d; font-size: 0.9rem;"><strong>Registration:</strong> ${regNumber}</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="background: ${titlesEarned > 0 ? '#d4edda' : '#f8d7da'}; color: ${titlesEarned > 0 ? '#155724' : '#721c24'}; padding: 8px 12px; border-radius: 6px; font-weight: 600; margin-bottom: 10px;">
+                                    ${titlesEarned} Title${titlesEarned !== 1 ? 's' : ''} Earned
+                                </div>
+                                <button onclick="searchSpecificDog('${regNumber}')" style="background: #17a2b8; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                                    View Details
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 0.9rem;">
+                            <div><strong>Total Records:</strong> ${dogRecords.length}</div>
+                            <div><strong>Levels Competed:</strong> ${Object.keys(levelSummary).length}</div>
+                            <div><strong>Total Q's:</strong> ${dogRecords.reduce((sum, r) => sum + (r.points || 0), 0)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                <div style="text-align: center; margin-top: 30px;">
+                    <button onclick="showOwnerView()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 10px;">
+                        ← Search Another Owner
+                    </button>
+                    <button onclick="backToSearch()" style="background: #17a2b8; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                        Back to Dog Search
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('summaryContent').innerHTML = html;
+        }
+
+        function searchSpecificDog(regNumber) {
+            document.getElementById('searchInput').value = regNumber;
+            searchDog();
+        }
+
+        function backToSearch() {
+            document.getElementById('summaryContent').innerHTML = `
+                <div class="validation-rules">
+                    <h4>Title Requirements</h4>
+                    <ul>
+                        <li>Minimum 4 Q's required for each level</li>
+                        <li>Q's must come from at least 2 different judges</li>
+                        <li>Prerequisites must be met before advancing to higher levels</li>
+                        <li>Special case: "Investigator 3" requires either "Patrol 1" OR "Detective 2"</li>
+                        <li>Games levels require at least 2 different games (BJ, C, P, T, GB)</li>
+                        <li>Ace awards given every 10 Q's after title is earned</li>
+                    </ul>
+                </div>
+            `;
         }
 
         function loadDataFromFile() {
