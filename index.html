@@ -798,21 +798,30 @@
                     color: PDFLib.rgb(regConfig.color[0], regConfig.color[1], regConfig.color[2])
                 });
 
-                // Add handler name (where "Karen Yuen" appears) - leave blank for manual entry
+                // Add handler name (where "Karen Yuen" appears) - using Maiandra font, black color
                 const handlerConfig = titleCertificateConfig.handlerName;
-                // Intentionally left blank - handlers will fill this in manually
+                const handlerTextWidth = maiandraFont.widthOfTextAtSize(handlerName, handlerConfig.size);
+                const handlerX = handlerConfig.align === 'center' ? handlerConfig.x - (handlerTextWidth / 2) : handlerConfig.x;
+                
+                firstPage.drawText(handlerName, {
+                    x: handlerX,
+                    y: handlerConfig.y,
+                    size: handlerConfig.size,
+                    font: maiandraFont, // Use Maiandra font
+                    color: PDFLib.rgb(0, 0, 0) // Keep black color
+                });
 
-                // Add dog name (under the & symbol, centered - where "Luka" appears)
+                // Add dog name (under the & symbol, centered - where "Luka" appears) - using Maiandra font, black color
                 const dogConfig = titleCertificateConfig.dogName;
-                const dogTextWidth = boldFont.widthOfTextAtSize(dogName, dogConfig.size);
+                const dogTextWidth = maiandraFont.widthOfTextAtSize(dogName, dogConfig.size);
                 const dogX = dogConfig.align === 'center' ? dogConfig.x - (dogTextWidth / 2) : dogConfig.x;
                 
                 firstPage.drawText(dogName, {
                     x: dogX,
                     y: dogConfig.y,
                     size: dogConfig.size,
-                    font: boldFont,
-                    color: PDFLib.rgb(dogConfig.color[0], dogConfig.color[1], dogConfig.color[2])
+                    font: maiandraFont, // Use Maiandra font
+                    color: PDFLib.rgb(0, 0, 0) // Keep black color
                 });
 
                 // Add date in sentence format: "On [Date], has completed the requirements for the title of"
