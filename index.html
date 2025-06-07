@@ -435,7 +435,7 @@
                        onkeypress="handleKeyPress(event)">
                 <button class="search-btn" onclick="searchDog()">Search Dog Records</button>
                 <button class="owner-view-btn" onclick="showOwnerView()">Owner View by ID</button>
-                <small style="color: #666; font-size: 0.8rem;">v4.2 - Certificate System Fixed!</small>
+                <small style="color: #666; font-size: 0.8rem;">v4.3 - Dedicated ACE Certificate System!</small>
             </div>
         </div>
 
@@ -556,28 +556,7 @@
             "Games 1", "Games 2", "Games 3", "Games 4"
         ];
 
-        /*
-        FONT NOTES:
-        - Times-Roman-Bold is the closest to Maiandra GD among PDF-lib standard fonts
-        - You CAN load custom TTF files! Here's how:
-        
-        1. Upload TTF file to your GitHub repository (e.g., /fonts/MaiandraGD.ttf)
-        2. Use this code to load it:
-        
-        const fontUrl = 'https://raw.githubusercontent.com/cwagtracker/Tracker/main/fonts/MaiandraGD.ttf';
-        const fontResponse = await fetch(fontUrl);
-        const fontBytes = await fontResponse.arrayBuffer();
-        const customFont = await pdfDoc.embedFont(fontBytes);
-        
-        Then use customFont instead of timesBold for the title text.
-        
-        POSITIONING NOTES (titleCertificateConfig):
-        - All measurements are in PDF points (72 points = 1 inch)
-        - Landscape 8.5x11 = 792 x 612 points
-        - Y coordinates start from bottom (0) and go up
-        - X coordinates start from left (0) and go right
-        - Current positions based on screenshot analysis
-        */
+        // Certificate template mapping - TITLE CERTIFICATES use category-specific templates
         const certificateTemplateMapping = {
             // Scent Work titles use Scent.pdf
             'Patrol 1': { template: 'Scent.pdf', category: 'scent' },
@@ -619,50 +598,103 @@
             'Games 4': { template: 'Games.pdf', category: 'games' }
         };
 
-        // Font and positioning configuration for title certificates (8.5x11 landscape = 792x612)
-        // Based on actual certificate template screenshot - CORRECTED Y coordinates
+        // Font and positioning configuration for TITLE certificates (8.5x11 landscape = 792x612)
         const titleCertificateConfig = {
             // Registration number positioning (NEAR TOP of page)
             registrationNumber: {
-                x: 445,  // Right under "team of"
-                y: 520,  // Near top (higher Y = closer to top)
+                x: 120,  // Right under "team of"
+                y: 400,  // Near top (higher Y = closer to top)
                 size: 12,
                 color: [0, 0, 0] // Black
             },
             
             // Handler name positioning (BELOW reg number - "Karen Yuen")
             handlerName: {
-                x: 396,  // Center X (792/2)
-                y: 470,  // Below registration number
-                size: 24,
+                x: 414,  // Center X (792/2)
+                y: 370,  // Below registration number
+                size: 30,
                 color: [0, 0, 0], // Black
                 align: 'center'
             },
             
             // Dog name positioning (BELOW handler - under & symbol - "Luka")
             dogName: {
-                x: 396,  // Center X (792/2) 
-                y: 420,  // Below handler name
-                size: 24,
+                x: 414,  // Center X (792/2) 
+                y: 280,  // Below handler name
+                size: 30,
                 color: [0, 0, 0], // Black
                 align: 'center'
             },
             
             // Date positioning (MIDDLE of sheet - "On 08/25/2023, has completed...")
             dateEarned: {
-                x: 372,  // After "On " in the sentence
-                y: 310,  // Middle of page vertically (612/2 ≈ 306)
+                x: 82,  // After "On " in the sentence
+                y: 235,  // Middle of page vertically (612/2 ≈ 306)
                 size: 12,
                 color: [0, 0, 0] // Black
             },
             
             // Title and abbreviation positioning (LOWER area, right-justified)
             titleAbbreviation: {
-                x: 738,  // 3/4" from right border (792 - 54 = 738)
-                y: 200,  // Lower area of certificate
-                size: 18,
+                x: 700,  // 3/4" from right border (792 - 54 = 738)
+                y: 175,  // Lower area of certificate
+                size: 30,
                 color: [0, 0, 0.8], // Blue to match template
                 align: 'right' // Right-justified
+            }
+        };
+
+        // ACE certificate positioning configuration (8.5x11 landscape = 792x612)
+        // ALL ACE certificates use Ace.pdf template with these positions
+        const aceCertificateConfig = {
+            // Date line: "This certifies that on <<Date>> the requirements have been met for the title of:"
+            dateLine: {
+                x: 450,
+                y: 440,
+                size: 12,
+                color: [0, 0, 0], // Black
+                font: 'calibri', // Calibri font
+                align: 'center'
+            },
+            
+            // Class/Level with abbreviation
+            levelAbbreviation: {
+                x: 670,
+                y: 300,
+                size: 30,
+                color: [0, 0, 0.5], // #000080 (blue)
+                font: 'maiandra', // Maiandra GD font
+                align: 'right'
+            },
+            
+            // Call name (dog name)
+            callName: {
+                x: 400,
+                y: 270,
+                size: 28,
+                color: [0, 0, 0], // Black
+                font: 'maiandra', // Maiandra GD font
+                align: 'center'
+            },
+            
+            // Handler name
+            handlerName: {
+                x: 460,
+                y: 180,
+                size: 28,
+                color: [0, 0, 0], // Black
+                font: 'maiandra', // Maiandra GD font
+                align: 'center'
+            },
+            
+            // Registration number
+            registrationNumber: {
+                x: 540,
+                y: 170,
+                size: 12,
+                color: [0, 0, 0], // Black
+                font: 'calibri', // Calibri font
+                align: 'left'
             }
         };
 
@@ -949,14 +981,90 @@
                 const abbreviation = titleAbbreviations[level] || level;
                 const aceDesignation = aceCount === 1 ? `${abbreviation}A` : `${abbreviation}Ax${aceCount}`;
 
-                // Get template info (Ace certificates use the same templates as titles)
-                const templateInfo = certificateTemplateMapping[level];
-                if (!templateInfo) {
-                    throw new Error(`No certificate template mapped for level: ${level}`);
+                // Get dog's records for this level to calculate date earned
+                const levelRecords = trialingData.filter(r => 
+                    r.registrationNumber === regNumber && r.level === level
+                );
+
+                if (levelRecords.length === 0) {
+                    throw new Error('No records found for this level');
                 }
 
-                // Get handler name from Column H
-                let handlerName = 'Handler Name'; // Safe default
+                // Calculate when the ACE was earned (after title completion)
+                const titleInfo = calculateTitlePoints(levelRecords);
+                const dateEarned = titleInfo.titleDate ? titleInfo.titleDate.toLocaleDateString() : new Date().toLocaleDateString();
+
+                // ACE certificates use dedicated Ace.pdf template
+                const templateUrl = 'https://raw.githubusercontent.com/cwagtracker/Tracker/main/templates/Ace.pdf';
+                
+                let templateBytes;
+                try {
+                    const response = await fetch(templateUrl);
+                    if (!response.ok) {
+                        throw new Error(`ACE template not found: ${templateUrl}`);
+                    }
+                    templateBytes = await response.arrayBuffer();
+                } catch (fetchError) {
+                    // Fallback to creating a basic ace certificate
+                    console.warn('ACE template not available, creating basic ace certificate:', fetchError);
+                    return await createFallbackAceCertificate(dogName, regNumber, level, aceDesignation, aceCount);
+                }
+
+                // Load the ACE template PDF
+                const pdfDoc = await PDFLib.PDFDocument.load(templateBytes);
+                const pages = pdfDoc.getPages();
+                const firstPage = pages[0];
+                
+                // Register fontkit for custom fonts
+                if (typeof fontkit !== 'undefined') {
+                    try {
+                        pdfDoc.registerFontkit(fontkit);
+                        console.log('✅ Fontkit registered for ACE certificate');
+                    } catch (err) {
+                        console.log('⚠️ Fontkit registration failed:', err.message);
+                    }
+                }
+
+                // Embed standard fonts first
+                const helvetica = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+                const calibriFont = helvetica; // Fallback to Helvetica if Calibri not available
+                
+                // Load Maiandra GD font
+                let maiandraFont = await pdfDoc.embedFont(PDFLib.StandardFonts.TimesRomanBold); // Fallback
+                
+                try {
+                    // Try loading custom Maiandra font
+                    const fontUrls = [
+                        'https://cdn.jsdelivr.net/gh/cwagtracker/Tracker@main/fonts/Maiandra%20GD.TTF',
+                        'https://raw.githubusercontent.com/cwagtracker/Tracker/main/fonts/Maiandra%20GD.TTF'
+                    ];
+                    
+                    for (const fontUrl of fontUrls) {
+                        try {
+                            console.log('🎨 Loading Maiandra font for ACE certificate:', fontUrl);
+                            const fontResponse = await fetch(fontUrl, {
+                                mode: 'cors',
+                                headers: { 'Accept': 'application/octet-stream, */*' }
+                            });
+                            
+                            if (fontResponse.ok) {
+                                const fontBytes = await fontResponse.arrayBuffer();
+                                if (typeof fontkit !== 'undefined') {
+                                    maiandraFont = await pdfDoc.embedFont(fontBytes);
+                                    console.log('✅ Maiandra GD font loaded for ACE certificate!');
+                                    break;
+                                }
+                            }
+                        } catch (err) {
+                            console.log('⚠️ Maiandra font load failed:', err.message);
+                        }
+                    }
+                } catch (error) {
+                    console.log('🔄 Using Times-Roman-Bold fallback for Maiandra');
+                }
+
+                // Get handler name from global data
+                let handlerName = 'Handler Name'; // Default fallback
                 if (globalData && globalData.length > 1) {
                     const dogData = globalData.slice(1).find(row => 
                         row && row[0] && row[0].toString().trim() === regNumber.toString().trim()
@@ -966,151 +1074,55 @@
                     }
                 }
 
-                // Load the template from GitHub repository
-                const templateUrl = `https://raw.githubusercontent.com/cwagtracker/Tracker/main/templates/${templateInfo.template}`;
-                
-                let templateBytes;
-                try {
-                    const response = await fetch(templateUrl);
-                    if (!response.ok) {
-                        throw new Error(`Template not found: ${templateUrl}`);
-                    }
-                    templateBytes = await response.arrayBuffer();
-                } catch (fetchError) {
-                    // Fallback to creating a basic ace certificate
-                    console.warn('Template not available, creating basic ace certificate:', fetchError);
-                    return await createFallbackAceCertificate(dogName, regNumber, level, aceDesignation, aceCount);
-                }
-
-                // Load the template PDF
-                const pdfDoc = await PDFLib.PDFDocument.load(templateBytes);
-                const pages = pdfDoc.getPages();
-                const firstPage = pages[0];
-                
-                // Embed fonts
-                const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-                const boldFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
-                const timesBold = await pdfDoc.embedFont(PDFLib.StandardFonts.TimesRomanBold);
-
-                // Load Maiandra GD font with CORS-friendly hosting (same as title certificates)
-                // Register fontkit FIRST if available
-                if (typeof fontkit !== 'undefined') {
-                    try {
-                        pdfDoc.registerFontkit(fontkit);
-                        console.log('✅ Fontkit registered for Ace certificate');
-                    } catch (err) {
-                        console.log('⚠️ Fontkit registration failed:', err.message);
-                    }
-                }
-
-                let maiandraFont;
-                let fontLoaded = false;
-                
-                // Try multiple CORS-friendly CDNs for Maiandra font
-                const corsFreeFontUrls = [
-                    'https://cdn.jsdelivr.net/gh/cwagtracker/Tracker@main/fonts/Maiandra%20GD.TTF',
-                    'https://cdn.statically.io/gh/cwagtracker/Tracker/main/fonts/Maiandra%20GD.TTF',
-                    'https://raw.githack.com/cwagtracker/Tracker/main/fonts/Maiandra%20GD.TTF'
-                ];
-                
-                for (const fontUrl of corsFreeFontUrls) {
-                    if (fontLoaded) break;
+                // Helper function to draw text with alignment
+                function drawTextWithAlignment(page, text, config, font) {
+                    let x = config.x;
                     
-                    try {
-                        console.log('🏆 Loading Maiandra for Ace certificate:', fontUrl);
-                        const fontResponse = await fetch(fontUrl, {
-                            mode: 'cors',
-                            method: 'GET',
-                            headers: { 'Accept': 'application/octet-stream, font/ttf, */*' }
-                        });
-                        
-                        if (fontResponse.ok && typeof fontkit !== 'undefined') {
-                            const fontBytes = await fontResponse.arrayBuffer();
-                            maiandraFont = await pdfDoc.embedFont(fontBytes);
-                            console.log('✅ Maiandra GD loaded for Ace certificate!');
-                            fontLoaded = true;
-                            break;
-                        }
-                    } catch (fetchError) {
-                        console.log('⚠️ Ace font fetch failed:', fetchError.message);
+                    if (config.align === 'center') {
+                        const textWidth = font.widthOfTextAtSize(text, config.size);
+                        x = config.x - (textWidth / 2);
+                    } else if (config.align === 'right') {
+                        const textWidth = font.widthOfTextAtSize(text, config.size);
+                        x = config.x - textWidth;
                     }
+                    // 'left' alignment uses x as-is
+                    
+                    page.drawText(text, {
+                        x: x,
+                        y: config.y,
+                        size: config.size,
+                        font: font,
+                        color: PDFLib.rgb(config.color[0], config.color[1], config.color[2])
+                    });
                 }
-                
-                // Fallback to Times-Roman
-                if (!fontLoaded) {
-                    maiandraFont = timesBold;
-                    console.log('📝 Using Times-Roman-Bold for Ace certificate');
-                }
 
-                // Calculate date earned
-                const levelRecords = trialingData.filter(r => 
-                    r.registrationNumber === regNumber && r.level === level
-                );
-                const titleInfo = calculateTitlePoints(levelRecords);
-                const dateEarned = titleInfo.titleDate ? titleInfo.titleDate.toLocaleDateString() : new Date().toLocaleDateString();
+                // 1. Date line: "This certifies that on <<Date>> the requirements have been met for the title of:"
+                const dateLineText = `This certifies that on ${dateEarned} the requirements have been met for the title of:`;
+                drawTextWithAlignment(firstPage, dateLineText, aceCertificateConfig.dateLine, calibriFont);
 
-                // Add date line: "This certifies that on <<date>> the requirements have been met for the title of:"
-                // x450, y440 center alignment, size 12, black color
-                const dateText = `This certifies that on ${dateEarned} the requirements have been met for the title of:`;
-                const dateTextWidth = font.widthOfTextAtSize(dateText, 12);
-                firstPage.drawText(dateText, {
-                    x: 450 - (dateTextWidth / 2), // Center alignment
-                    y: 440,
-                    size: 12,
-                    font: font,
-                    color: PDFLib.rgb(0, 0, 0) // Black
-                });
+                // 2. Class/Level with abbreviation (e.g., "Patrol 1 (CW-SPA)")
+                const levelText = `${level} (${aceDesignation})`;
+                drawTextWithAlignment(firstPage, levelText, aceCertificateConfig.levelAbbreviation, maiandraFont);
 
-                // Add Class/Level (abbreviation): x670, y300, right alignment, size 30, color 000080 (blue)
-                const levelAbbrevText = `${level} (${aceDesignation})`;
-                const levelTextWidth = maiandraFont.widthOfTextAtSize(levelAbbrevText, 30);
-                firstPage.drawText(levelAbbrevText, {
-                    x: 670 - levelTextWidth, // Right alignment
-                    y: 300,
-                    size: 30,
-                    font: maiandraFont,
-                    color: PDFLib.rgb(0, 0, 0.5) // Blue (#000080)
-                });
+                // 3. Call name (dog name)
+                drawTextWithAlignment(firstPage, dogName, aceCertificateConfig.callName, maiandraFont);
 
-                // Add Call name: x400, y270, center alignment, black color, size 28
-                const dogNameWidth = maiandraFont.widthOfTextAtSize(dogName, 28);
-                firstPage.drawText(dogName, {
-                    x: 400 - (dogNameWidth / 2), // Center alignment
-                    y: 270,
-                    size: 28,
-                    font: maiandraFont,
-                    color: PDFLib.rgb(0, 0, 0) // Black
-                });
+                // 4. Handler name
+                drawTextWithAlignment(firstPage, handlerName, aceCertificateConfig.handlerName, maiandraFont);
 
-                // Add Handler Name: x460, y180, center alignment, black color, size 28
-                const handlerNameWidth = maiandraFont.widthOfTextAtSize(handlerName, 28);
-                firstPage.drawText(handlerName, {
-                    x: 460 - (handlerNameWidth / 2), // Center alignment
-                    y: 180,
-                    size: 28,
-                    font: maiandraFont,
-                    color: PDFLib.rgb(0, 0, 0) // Black
-                });
+                // 5. Registration number
+                drawTextWithAlignment(firstPage, regNumber, aceCertificateConfig.registrationNumber, calibriFont);
 
-                // Add Registration number: x540, y170, left alignment, black color, size 12
-                firstPage.drawText(regNumber, {
-                    x: 540, // Left alignment
-                    y: 170,
-                    size: 12,
-                    font: font,
-                    color: PDFLib.rgb(0, 0, 0) // Black
-                });
-
-                // Save and download
+                // Save and download the ACE certificate
                 const pdfBytes = await pdfDoc.save();
-                downloadPDF(pdfBytes, `${dogName}-${level.replace(/\s+/g, '-')}-Ace-Certificate.pdf`);
+                downloadPDF(pdfBytes, `${dogName}-${level.replace(/\s+/g, '-')}-ACE-Certificate.pdf`);
 
                 btn.textContent = originalText;
                 btn.disabled = false;
 
             } catch (error) {
-                console.error('Ace certificate generation error:', error);
-                alert(`Unable to generate ace certificate: ${error.message}\n\nPlease check that the certificate templates are available in your GitHub repository.`);
+                console.error('ACE certificate generation error:', error);
+                alert(`Unable to generate ACE certificate: ${error.message}\n\nPlease check that the Ace.pdf template is available in your GitHub repository.`);
                 
                 const btn = event.target;
                 btn.textContent = '🏆 Ace Certificate';
@@ -1118,7 +1130,7 @@
             }
         }
 
-        // Fallback function for Ace certificates
+        // Updated fallback function for ACE certificates to match new layout
         async function createFallbackAceCertificate(dogName, regNumber, level, aceDesignation, aceCount) {
             const pdfDoc = await PDFLib.PDFDocument.create();
             const page = pdfDoc.addPage([792, 612]); // Landscape 8.5x11
@@ -1136,38 +1148,57 @@
                 color: PDFLib.rgb(0.6, 0.2, 0.8)
             });
 
-            // Dog name
+            // Date line (following new format)
+            const dateEarned = new Date().toLocaleDateString();
+            const dateLineText = `This certifies that on ${dateEarned} the requirements have been met for the title of:`;
+            page.drawText(dateLineText, {
+                x: 450 - (font.widthOfTextAtSize(dateLineText, 12) / 2),
+                y: 440,
+                size: 12,
+                font: font,
+                color: PDFLib.rgb(0, 0, 0)
+            });
+
+            // Level with ACE designation
+            const levelText = `${level} (${aceDesignation})`;
+            page.drawText(levelText, {
+                x: 670 - boldFont.widthOfTextAtSize(levelText, 30),
+                y: 300,
+                size: 30,
+                font: boldFont,
+                color: PDFLib.rgb(0, 0, 0.5)
+            });
+
+            // Dog name (centered)
             page.drawText(dogName, {
-                x: width / 2 - (dogName.length * 8),
-                y: height - 180,
+                x: 400 - (boldFont.widthOfTextAtSize(dogName, 28) / 2),
+                y: 270,
                 size: 28,
                 font: boldFont,
                 color: PDFLib.rgb(0, 0, 0)
             });
 
-            // Ace designation
-            page.drawText(aceDesignation, {
-                x: width / 2 - (aceDesignation.length * 10),
-                y: height - 260,
-                size: 32,
+            // Handler name (placeholder - would need to be retrieved from data)
+            const handlerName = 'Handler Name';
+            page.drawText(handlerName, {
+                x: 460 - (boldFont.widthOfTextAtSize(handlerName, 28) / 2),
+                y: 180,
+                size: 28,
                 font: boldFont,
-                color: PDFLib.rgb(0.6, 0.2, 0.8)
+                color: PDFLib.rgb(0, 0, 0)
             });
 
-            // Achievement text
-            page.drawText(`Has achieved ${aceCount} Ace award${aceCount > 1 ? 's' : ''} in ${level}`, {
-                x: width / 2 - 120,
-                y: height - 340,
-                size: 16,
+            // Registration number
+            page.drawText(regNumber, {
+                x: 540,
+                y: 170,
+                size: 12,
                 font: font,
                 color: PDFLib.rgb(0, 0, 0)
             });
 
-            // Registration
-            page.drawText(`Registration: ${regNumber}`, { x: 50, y: height - 450, size: 12, font: font });
-
             const pdfBytes = await pdfDoc.save();
-            downloadPDF(pdfBytes, `${dogName}-${level.replace(/\s+/g, '-')}-Ace-Certificate.pdf`);
+            downloadPDF(pdfBytes, `${dogName}-${level.replace(/\s+/g, '-')}-ACE-Certificate.pdf`);
         }
 
         function downloadPDF(pdfBytes, filename) {
