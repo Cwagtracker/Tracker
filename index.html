@@ -673,7 +673,7 @@
                 btn.textContent = 'Generating...';
                 btn.disabled = true;
 
-                // Get template info
+                // Get template info based on the LEVEL, not handler name
                 const templateInfo = certificateTemplateMapping[level];
                 if (!templateInfo) {
                     throw new Error(`No certificate template mapped for level: ${level}`);
