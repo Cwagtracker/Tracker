@@ -491,6 +491,7 @@
     <script>
         let trialingData = [];
         let currentDogRecords = [];
+        let globalData = []; // Store raw spreadsheet data for handler lookup
         
         // Official title abbreviations
         const titleAbbreviations = {
@@ -672,7 +673,7 @@
                 btn.textContent = 'Generating...';
                 btn.disabled = true;
 
-                // Get template info
+                // Get template info based on the LEVEL, not handler name
                 const templateInfo = certificateTemplateMapping[level];
                 if (!templateInfo) {
                     throw new Error(`No certificate template mapped for level: ${level}`);
@@ -798,21 +799,41 @@
                     color: PDFLib.rgb(regConfig.color[0], regConfig.color[1], regConfig.color[2])
                 });
 
-                // Add handler name (where "Karen Yuen" appears) - leave blank for manual entry
+                // Add handler name (where "Karen Yuen" appears) - using Maiandra font, black color
+                // Find handler name from Column H right when we need it
+                let handlerName = 'Handler Name'; // Safe default
+                if (globalData && globalData.length > 1) {
+                    const dogData = globalData.slice(1).find(row => 
+                        row && row[0] && row[0].toString().trim() === regNumber.toString().trim()
+                    );
+                    if (dogData && dogData[7]) {
+                        handlerName = dogData[7].toString().trim();
+                    }
+                }
+                
                 const handlerConfig = titleCertificateConfig.handlerName;
-                // Intentionally left blank - handlers will fill this in manually
+                const handlerTextWidth = maiandraFont.widthOfTextAtSize(handlerName, handlerConfig.size);
+                const handlerX = handlerConfig.align === 'center' ? handlerConfig.x - (handlerTextWidth / 2) : handlerConfig.x;
+                
+                firstPage.drawText(handlerName, {
+                    x: handlerX,
+                    y: handlerConfig.y,
+                    size: handlerConfig.size,
+                    font: maiandraFont, // Use Maiandra font
+                    color: PDFLib.rgb(0, 0, 0) // Keep black color
+                });
 
-                // Add dog name (under the & symbol, centered - where "Luka" appears)
+                // Add dog name (under the & symbol, centered - where "Luka" appears) - using Maiandra font, black color
                 const dogConfig = titleCertificateConfig.dogName;
-                const dogTextWidth = boldFont.widthOfTextAtSize(dogName, dogConfig.size);
+                const dogTextWidth = maiandraFont.widthOfTextAtSize(dogName, dogConfig.size);
                 const dogX = dogConfig.align === 'center' ? dogConfig.x - (dogTextWidth / 2) : dogConfig.x;
                 
                 firstPage.drawText(dogName, {
                     x: dogX,
                     y: dogConfig.y,
                     size: dogConfig.size,
-                    font: boldFont,
-                    color: PDFLib.rgb(dogConfig.color[0], dogConfig.color[1], dogConfig.color[2])
+                    font: maiandraFont, // Use Maiandra font
+                    color: PDFLib.rgb(0, 0, 0) // Keep black color
                 });
 
                 // Add date in sentence format: "On [Date], has completed the requirements for the title of"
@@ -1233,6 +1254,17 @@
             const dogName = records[0].callName || 'Unknown';
             const regNumber = records[0].registrationNumber;
             
+            // Get handler name from Column H
+            let handlerName = '';
+            if (globalData && globalData.length > 1) {
+                const dogData = globalData.slice(1).find(row => 
+                    row && row[0] && row[0].toString().trim() === regNumber.toString().trim()
+                );
+                if (dogData && dogData[7]) {
+                    handlerName = dogData[7].toString().trim();
+                }
+            }
+            
             const levelSummary = {};
             
             records.forEach(record => {
@@ -1257,6 +1289,7 @@
 
             let html = `
                 <div class="dog-info">
+                    ${handlerName ? `<p style="font-size: 1.1rem; color: #6c757d; margin-bottom: 5px;"><strong>Handler:</strong> ${handlerName}</p>` : ''}
                     <h3>${dogName}</h3>
                     <p><strong>Registration:</strong> ${regNumber}</p>
                     <p><strong>Total Trialing Records:</strong> ${records.length}</p>
@@ -1538,6 +1571,9 @@
             const workbook = XLSX.read(data, {type: 'array', cellDates: true});
             const dataSheet = workbook.Sheets['Data'] || workbook.Sheets[workbook.SheetNames[0]];
             const jsonData = XLSX.utils.sheet_to_json(dataSheet, {header: 1, dateNF: 'yyyy-mm-dd'});
+            
+            // Store raw data for handler lookup (includes headers)
+            globalData = jsonData;
             
             trialingData = jsonData.slice(1).map(row => {
                 let processedDate = row[2];
