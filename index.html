@@ -645,27 +645,31 @@
             return titlePlacementData[level]?.certificateName || level;
         }
 
-        // Helper function to get ACE certificate name (Column D + abbreviation in brackets + multiplier)
-        function getAceCertificateName(level, aceCount) {
-            const abbreviation = titleAbbreviations[level] || level;
-            
-            if (titlePlacementData[level]) {
-                let aceName = titlePlacementData[level].aceCertificateName;
-                
-                // Format: "ACE Certificate Name (CW-SDD)" with multiplier
-                let aceDesignation;
-                if (aceCount === 1) {
-                    aceDesignation = `${abbreviation}A`;
-                } else {
-                    aceDesignation = `${abbreviation}Ax${aceCount}`;
-                }
-                
-                return `${aceName} (${aceDesignation})`;
-            }
-            
-            // Fallback to original system if not found
-            return aceCount === 1 ? `${abbreviation}A` : `${abbreviation}Ax${aceCount}`;
+       // Helper function to get ACE certificate name (Column D + abbreviation in brackets + multiplier)
+function getAceCertificateName(level, aceCount) {
+    const abbreviation = titleAbbreviations[level] || level;
+    
+    if (titlePlacementData[level]) {
+        let aceName = titlePlacementData[level].aceCertificateName;
+        
+        // Format: "Scent Patrol Ace x 4 (CW-SPAx4)" for multiple, "Scent Patrol Ace (CW-SPA)" for single
+        let aceDesignation;
+        let displayText;
+        
+        if (aceCount === 1) {
+            aceDesignation = `${abbreviation}A`;
+            displayText = `${aceName} (${aceDesignation})`;
+        } else {
+            aceDesignation = `${abbreviation}Ax${aceCount}`;
+            displayText = `${aceName} x ${aceCount} (${aceDesignation})`;
         }
+        
+        return displayText;
+    }
+    
+    // Fallback to original system if not found
+    return aceCount === 1 ? `${abbreviation}A` : `${abbreviation}Ax${aceCount}`;
+}
 
         // Generate title certificate
         async function generateTitleCertificate(level, regNumber, dogName, abbreviation) {
