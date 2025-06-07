@@ -1270,15 +1270,37 @@
                 dogsByReg[record.registrationNumber].push(record);
             });
 
-            // Display owner's dogs
+            const dogRegistrations = Object.keys(dogsByReg);
+            const dogCount = dogRegistrations.length;
+
+            // Create header with owner info and navigation
             let html = `
-                <div style="background: #e7f3ff; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #b8daff;">
-                    <h3 style="color: #004085; margin-bottom: 10px;">👤 Owner ID: ${ownerId}</h3>
-                    <p style="color: #004085;">Found <strong>${Object.keys(dogsByReg).length}</strong> dog(s) registered to this owner</p>
+                <div style="background: linear-gradient(45deg, #667eea, #764ba2); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                    <h3 style="margin: 0; font-size: 1.4rem;">Owner View - ID: ${ownerId}</h3>
+                    <p style="margin: 10px 0 0 0; opacity: 0.9;">${dogCount} dog(s) found</p>
+                </div>
+
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <button onclick="showOwnerView()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 10px;">
+                        ← Change Owner ID
+                    </button>
+                    <button onclick="printOwnerView()" style="background: #6f42c1; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                        🖨️ Print View
+                    </button>
                 </div>
             `;
 
-            Object.keys(dogsByReg).forEach(regNumber => {
+            // Define all levels in proper order
+            const allLevels = [
+                "Patrol 1", "Detective 2", "Investigator 3", "Super Sleuth 4", "Private Inv", "Det Diversions",
+                "Ranger 1", "Ranger 2", "Ranger 3", "Ranger 4", "Ranger 5",
+                "Dasher 3", "Dasher 4", "Dasher 5", "Dasher 6",
+                "Obedience 1", "Obedience 2", "Obedience 3", "Obedience 4", "Obedience 5",
+                "Starter", "Advanced", "Pro", "ARF"
+            ];
+
+            // Calculate data for each dog
+            const dogsData = dogRegistrations.map(regNumber => {
                 const dogRecords = dogsByReg[regNumber];
                 const dogName = dogRecords[0].callName || 'Unknown';
                 
@@ -1315,54 +1337,120 @@
                     levelSummary[record.level].records.push(record);
                 });
 
-                // Count titles earned
-                let titlesEarned = 0;
-                Object.keys(levelSummary).forEach(level => {
-                    const summary = levelSummary[level];
-                    if (summary.totalPoints >= 4 && summary.judges.size >= 2) {
-                        titlesEarned++;
-                    }
-                });
+                return {
+                    regNumber,
+                    dogName,
+                    handlerName,
+                    levelSummary
+                };
+            });
 
+            // Create the table
+            html += `
+                <div style="overflow-x: auto; border: 1px solid #dee2e6; border-radius: 8px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                        <thead>
+                            <tr style="background: #f8f9fa;">
+                                <th style="padding: 12px 8px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; position: sticky; left: 0; background: #f8f9fa; z-index: 10;">Level</th>
+            `;
+
+            // Add dog name headers (clickable)
+            dogsData.forEach(dog => {
+                const displayName = dog.dogName.length > 8 ? dog.dogName.substring(0, 8) : dog.dogName;
                 html += `
-                    <div style="background: white; border: 1px solid #e9ecef; border-radius: 8px; padding: 20px; margin-bottom: 15px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <div>
-                                <h4 style="color: #2c3e50; margin-bottom: 5px;">${dogName}</h4>
-                                ${handlerName ? `<p style="color: #6c757d; margin-bottom: 5px;"><strong>Handler:</strong> ${handlerName}</p>` : ''}
-                                <p style="color: #6c757d; font-size: 0.9rem;"><strong>Registration:</strong> ${regNumber}</p>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="background: ${titlesEarned > 0 ? '#d4edda' : '#f8d7da'}; color: ${titlesEarned > 0 ? '#155724' : '#721c24'}; padding: 8px 12px; border-radius: 6px; font-weight: 600; margin-bottom: 10px;">
-                                    ${titlesEarned} Title${titlesEarned !== 1 ? 's' : ''} Earned
-                                </div>
-                                <button onclick="searchSpecificDog('${regNumber}')" style="background: #17a2b8; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
-                                    View Details
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 0.9rem;">
-                            <div><strong>Total Records:</strong> ${dogRecords.length}</div>
-                            <div><strong>Levels Competed:</strong> ${Object.keys(levelSummary).length}</div>
-                            <div><strong>Total Q's:</strong> ${dogRecords.reduce((sum, r) => sum + (r.points || 0), 0)}</div>
-                        </div>
-                    </div>
+                    <th style="padding: 12px 8px; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: 600; min-width: 100px;">
+                        <a href="javascript:void(0)" onclick="searchSpecificDog('${dog.regNumber}')" 
+                           style="color: #667eea; text-decoration: none; font-weight: bold; cursor: pointer;"
+                           onmouseover="this.style.textDecoration='underline'" 
+                           onmouseout="this.style.textDecoration='none'">
+                            ${displayName}
+                        </a>
+                        <br>
+                        <small style="color: #6c757d; font-weight: normal;">${dog.regNumber}</small>
+                    </th>
                 `;
             });
 
             html += `
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            // Add rows for each level
+            allLevels.forEach(level => {
+                html += `
+                    <tr style="border-bottom: 1px solid #f0f0f0;">
+                        <td style="padding: 10px 8px; border-right: 1px solid #dee2e6; font-weight: 600; background: #f8f9fa; position: sticky; left: 0; z-index: 5;">${level}</td>
+                `;
+
+                dogsData.forEach(dog => {
+                    const levelData = dog.levelSummary[level];
+                    let cellContent = '-';
+                    let cellStyle = 'padding: 10px 8px; text-align: center; border-right: 1px solid #f0f0f0;';
+
+                    if (levelData) {
+                        const totalPoints = levelData.totalPoints;
+                        const judgeCount = levelData.judges.size;
+                        const hasTitle = totalPoints >= 4 && judgeCount >= 2;
+
+                        if (hasTitle) {
+                            const titleInfo = calculateTitlePoints(levelData.records);
+                            const titlePoints = titleInfo.titlePoints;
+                            const acePoints = Math.max(0, totalPoints - titlePoints);
+                            
+                            if (acePoints >= 10) {
+                                const aceCount = Math.floor(acePoints / 10);
+                                const abbreviation = titleAbbreviations[level] || level.substring(0, 3).toUpperCase();
+                                cellContent = `<strong style="color: #6f42c1;">${totalPoints}→Ace${aceCount > 1 ? ` (${aceCount})` : ''}</strong>`;
+                                cellStyle += ' background: linear-gradient(135deg, #e8f5e8, #d4edda);';
+                            } else {
+                                cellContent = `<strong style="color: #155724;">Title!</strong>`;
+                                cellStyle += ' background: #d4edda;';
+                            }
+                        } else if (totalPoints > 0) {
+                            const needMore = [];
+                            if (totalPoints < 4) needMore.push(`${4 - totalPoints} Q's`);
+                            if (judgeCount < 2) needMore.push(`${2 - judgeCount} judge${judgeCount === 0 ? 's' : ''}`);
+                            
+                            cellContent = `<span style="color: #856404;">${totalPoints}→${needMore.join(', ')}</span>`;
+                            cellStyle += ' background: #fff3cd;';
+                        }
+                    }
+
+                    html += `<td style="${cellStyle}">${cellContent}</td>`;
+                });
+
+                html += '</tr>';
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top: 20px; padding: 15px; background: #e7f3ff; border: 1px solid #b8daff; border-radius: 8px;">
+                    <h4 style="color: #004085; margin-bottom: 10px;">Legend:</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 0.9rem; color: #004085;">
+                        <div><strong>Title!</strong> - Title earned</div>
+                        <div><strong>X→Ace (Y)</strong> - X Q's, Y ACEs earned</div>
+                        <div><strong>X→Y Q's, Z judge</strong> - Progress toward title</div>
+                        <div><strong>-</strong> - No entries at this level</div>
+                    </div>
+                </div>
+
                 <div style="text-align: center; margin-top: 30px;">
-                    <button onclick="showOwnerView()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 10px;">
-                        ← Search Another Owner
-                    </button>
-                    <button onclick="backToSearch()" style="background: #17a2b8; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                    <button onclick="backToSearch()" style="background: #17a2b8; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 1rem;">
                         Back to Dog Search
                     </button>
                 </div>
             `;
 
             document.getElementById('summaryContent').innerHTML = html;
+        }
+
+        function printOwnerView() {
+            window.print();
         }
 
         function searchSpecificDog(regNumber) {
