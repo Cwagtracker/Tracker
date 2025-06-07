@@ -435,7 +435,7 @@
                        onkeypress="handleKeyPress(event)">
                 <button class="search-btn" onclick="searchDog()">Search Dog Records</button>
                 <button class="owner-view-btn" onclick="showOwnerView()">Owner View by ID</button>
-                <small style="color: #666; font-size: 0.8rem;">v4.3 - Dedicated ACE Certificate System!</small>
+                <small style="color: #666; font-size: 0.8rem;">v5.0 - Title Placement Integration!</small>
             </div>
         </div>
 
@@ -492,6 +492,7 @@
         let trialingData = [];
         let currentDogRecords = [];
         let globalData = []; // Store raw spreadsheet data for handler lookup
+        let titlePlacementData = {}; // Store Title Placement mapping data
         
         // Official title abbreviations
         const titleAbbreviations = {
@@ -650,7 +651,7 @@
             // Date line: "This certifies that on <<Date>> the requirements have been met for the title of:"
             dateLine: {
                 x: 448,
-                y: 425,
+                y: 440,
                 size: 12,
                 color: [0, 0, 0], // Black
                 font: 'calibri', // Calibri font
@@ -660,16 +661,16 @@
             // Class/Level with abbreviation
             levelAbbreviation: {
                 x: 448,
-                y: 355,
-                size: 36,
-                color: [0.85, 0.65, 0.13], // Gold 
+                y: 300,
+                size: 30,
+                color: [0, 0, 0.5], // #000080 (blue)
                 font: 'maiandra', // Maiandra GD font
-                align: 'center'
+                align: 'centre'
             },
             
             // Call name (dog name)
             callName: {
-                x: 398,
+                x: 400,
                 y: 270,
                 size: 28,
                 color: [0, 0, 0], // Black
@@ -679,7 +680,7 @@
             
             // Handler name
             handlerName: {
-                x: 398,
+                x: 460,
                 y: 180,
                 size: 28,
                 color: [0, 0, 0], // Black
@@ -698,6 +699,112 @@
             }
         };
 
+        // Load Title Placement data at startup - try multiple approaches
+        async function loadTitlePlacementData() {
+            try {
+                // First try: use window.fs.readFile if available (uploaded file)
+                if (typeof window !== 'undefined' && window.fs && window.fs.readFile) {
+                    try {
+                        const fileContent = await window.fs.readFile('Title Placement.xlsx');
+                        const workbook = XLSX.read(fileContent, {
+                            cellStyles: true,
+                            cellFormulas: true,
+                            cellDates: true
+                        });
+                        
+                        const sheetName = workbook.SheetNames[0];
+                        const sheet = workbook.Sheets[sheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(sheet, {header: 1});
+                        
+                        // Create mapping from class name to certificate names
+                        jsonData.slice(1).forEach(row => {
+                            if (row && row[1] && row[2] && row[3]) {
+                                const className = row[1].toString().trim();
+                                const certificateName = row[2].toString().trim();
+                                const aceCertificateName = row[3].toString().trim();
+                                
+                                titlePlacementData[className] = {
+                                    certificateName: certificateName,
+                                    aceCertificateName: aceCertificateName
+                                };
+                            }
+                        });
+                        
+                        console.log('✅ Title Placement data loaded via window.fs:', Object.keys(titlePlacementData).length, 'classes');
+                        return true;
+                    } catch (fsError) {
+                        console.log('📁 window.fs approach failed, trying fetch:', fsError.message);
+                    }
+                }
+                
+                // Second try: use fetch for static file
+                const response = await fetch('Title Placement.xlsx');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const fileContent = await response.arrayBuffer();
+                
+                const workbook = XLSX.read(new Uint8Array(fileContent), {
+                    cellStyles: true,
+                    cellFormulas: true,
+                    cellDates: true
+                });
+                
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(sheet, {header: 1});
+                
+                // Create mapping from class name to certificate names
+                // Row format: [Category, Class, Certificate, Ace Certificate]
+                jsonData.slice(1).forEach(row => {
+                    if (row && row[1] && row[2] && row[3]) {
+                        const className = row[1].toString().trim();
+                        const certificateName = row[2].toString().trim();
+                        const aceCertificateName = row[3].toString().trim();
+                        
+                        titlePlacementData[className] = {
+                            certificateName: certificateName,
+                            aceCertificateName: aceCertificateName
+                        };
+                    }
+                });
+                
+                console.log('✅ Title Placement data loaded via fetch:', Object.keys(titlePlacementData).length, 'classes');
+                return true;
+            } catch (error) {
+                console.warn('⚠️ Could not load Title Placement data:', error.message);
+                console.log('💡 You can upload the Title Placement.xlsx file using the file upload feature');
+                return false;
+            }
+        }
+
+        // Helper function to get certificate name for titles (Column C)
+        function getCertificateName(level) {
+            if (titlePlacementData[level]) {
+                return titlePlacementData[level].certificateName;
+            }
+            // Fallback to original level name if not found
+            return level;
+        }
+
+        // Helper function to get ACE certificate name (Column D + multiplier)
+        function getAceCertificateName(level, aceCount) {
+            if (titlePlacementData[level]) {
+                let aceName = titlePlacementData[level].aceCertificateName;
+                
+                // Add the multiplier for multiple ACEs (x2, x3, x4, etc.)
+                if (aceCount > 1) {
+                    aceName = `${aceName} x${aceCount}`;
+                }
+                
+                return aceName;
+            }
+            
+            // Fallback to original system if not found
+            const abbreviation = titleAbbreviations[level] || level;
+            return aceCount === 1 ? `${abbreviation}A` : `${abbreviation}Ax${aceCount}`;
+        }
+
         async function generateTitleCertificate(level, regNumber, dogName, abbreviation) {
             try {
                 const btn = event.target;
@@ -705,7 +812,7 @@
                 btn.textContent = 'Generating...';
                 btn.disabled = true;
 
-                // Get template info based on the LEVEL, not handler name
+                // Get template info based on the LEVEL
                 const templateInfo = certificateTemplateMapping[level];
                 if (!templateInfo) {
                     throw new Error(`No certificate template mapped for level: ${level}`);
@@ -724,6 +831,9 @@
                 const titleInfo = calculateTitlePoints(levelRecords);
                 const dateEarned = titleInfo.titleDate ? titleInfo.titleDate.toLocaleDateString() : new Date().toLocaleDateString();
 
+                // Get the proper certificate name from Title Placement data (Column C)
+                const certificateName = getCertificateName(level);
+
                 // Load the template from GitHub repository
                 const templateUrl = `https://raw.githubusercontent.com/cwagtracker/Tracker/main/templates/${templateInfo.template}`;
                 
@@ -735,23 +845,21 @@
                     }
                     templateBytes = await response.arrayBuffer();
                 } catch (fetchError) {
-                    // Fallback to creating a basic certificate if template not available
                     console.warn('Template not available, creating basic certificate:', fetchError);
-                    return await createFallbackCertificate(dogName, regNumber, level, abbreviation, dateEarned);
+                    return await createFallbackCertificate(dogName, regNumber, certificateName, abbreviation, dateEarned);
                 }
 
                 // Load the template PDF
                 const pdfDoc = await PDFLib.PDFDocument.load(templateBytes);
-                
                 const pages = pdfDoc.getPages();
                 const firstPage = pages[0];
                 
-                // Embed fonts - Times-Bold is closest to Maiandra GD
+                // Embed fonts
                 const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
                 const boldFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
                 const timesBold = await pdfDoc.embedFont(PDFLib.StandardFonts.TimesRomanBold);
 
-                // Register fontkit FIRST if available
+                // Register fontkit if available
                 if (typeof fontkit !== 'undefined') {
                     try {
                         pdfDoc.registerFontkit(fontkit);
@@ -761,15 +869,12 @@
                     }
                 }
 
-                // Load custom Maiandra font with CORS-friendly approach
+                // Load custom Maiandra font
                 let maiandraFont = timesBold; // Final fallback
                 
                 try {
-                    // Try loading custom font with proper CORS headers
                     const fontUrls = [
-                        // Try jsdelivr CDN first (better CORS support)
                         'https://cdn.jsdelivr.net/gh/cwagtracker/Tracker@main/fonts/Maiandra%20GD.TTF',
-                        // Fallback to GitHub raw
                         'https://raw.githubusercontent.com/cwagtracker/Tracker/main/fonts/Maiandra%20GD.TTF'
                     ];
                     
@@ -781,9 +886,7 @@
                             console.log('🎨 Trying font URL:', fontUrl);
                             const fontResponse = await fetch(fontUrl, {
                                 mode: 'cors',
-                                headers: {
-                                    'Accept': 'application/octet-stream, */*'
-                                }
+                                headers: { 'Accept': 'application/octet-stream, */*' }
                             });
                             
                             if (fontResponse.ok) {
@@ -816,7 +919,7 @@
                     maiandraFont = timesBold;
                 }
 
-                // Add registration number (under "This certifies that the team of")
+                // Add registration number
                 const regConfig = titleCertificateConfig.registrationNumber;
                 firstPage.drawText(regNumber, {
                     x: regConfig.x,
@@ -826,9 +929,8 @@
                     color: PDFLib.rgb(regConfig.color[0], regConfig.color[1], regConfig.color[2])
                 });
 
-                // Add handler name (where "Karen Yuen" appears) - using Maiandra font, black color
-                // Find handler name from Column H right when we need it
-                let handlerName = 'Handler Name'; // Safe default
+                // Add handler name
+                let handlerName = 'Handler Name';
                 if (globalData && globalData.length > 1) {
                     const dogData = globalData.slice(1).find(row => 
                         row && row[0] && row[0].toString().trim() === regNumber.toString().trim()
@@ -846,11 +948,11 @@
                     x: handlerX,
                     y: handlerConfig.y,
                     size: handlerConfig.size,
-                    font: maiandraFont, // Use Maiandra font
-                    color: PDFLib.rgb(0, 0, 0) // Keep black color
+                    font: maiandraFont,
+                    color: PDFLib.rgb(0, 0, 0)
                 });
 
-                // Add dog name (under the & symbol, centered - where "Luka" appears) - using Maiandra font, black color
+                // Add dog name
                 const dogConfig = titleCertificateConfig.dogName;
                 const dogTextWidth = maiandraFont.widthOfTextAtSize(dogName, dogConfig.size);
                 const dogX = dogConfig.align === 'center' ? dogConfig.x - (dogTextWidth / 2) : dogConfig.x;
@@ -859,14 +961,13 @@
                     x: dogX,
                     y: dogConfig.y,
                     size: dogConfig.size,
-                    font: maiandraFont, // Use Maiandra font
-                    color: PDFLib.rgb(0, 0, 0) // Keep black color
+                    font: maiandraFont,
+                    color: PDFLib.rgb(0, 0, 0)
                 });
 
-                // Add date in sentence format: "On [Date], has completed the requirements for the title of"
+                // Add date in sentence format
                 const dateConfig = titleCertificateConfig.dateEarned;
                 
-                // Draw "On " first
                 firstPage.drawText('On ', {
                     x: dateConfig.x - 20,
                     y: dateConfig.y,
@@ -875,7 +976,6 @@
                     color: PDFLib.rgb(dateConfig.color[0], dateConfig.color[1], dateConfig.color[2])
                 });
                 
-                // Draw the date
                 firstPage.drawText(dateEarned, {
                     x: dateConfig.x,
                     y: dateConfig.y,
@@ -884,7 +984,6 @@
                     color: PDFLib.rgb(dateConfig.color[0], dateConfig.color[1], dateConfig.color[2])
                 });
                 
-                // Draw ", has completed the requirements for the title of" after the date
                 const dateWidth = font.widthOfTextAtSize(dateEarned, dateConfig.size);
                 firstPage.drawText(', has completed the requirements for the title of', {
                     x: dateConfig.x + dateWidth,
@@ -894,11 +993,11 @@
                     color: PDFLib.rgb(dateConfig.color[0], dateConfig.color[1], dateConfig.color[2])
                 });
 
-                // Add title and abbreviation (right-justified, 3/4" from right border)
+                // Add title using the proper certificate name from Column C + abbreviation
                 const titleConfig = titleCertificateConfig.titleAbbreviation;
                 
-                // Format: "Patrol Level 1  (CW-SP)" - with brackets like in sample
-                const titleText = `${level}  (${abbreviation})`;
+                // Format: "Detective Diversions (CW-SDD)" - using Column C name
+                const titleText = `${certificateName} (${abbreviation})`;
                 const titleTextWidth = timesBold.widthOfTextAtSize(titleText, titleConfig.size);
                 const titleX = titleConfig.align === 'right' ? titleConfig.x - titleTextWidth : titleConfig.x;
                 
@@ -906,7 +1005,7 @@
                     x: titleX,
                     y: titleConfig.y,
                     size: titleConfig.size,
-                    font: maiandraFont, // Use Maiandra font if available
+                    font: maiandraFont,
                     color: PDFLib.rgb(titleConfig.color[0], titleConfig.color[1], titleConfig.color[2])
                 });
 
@@ -928,7 +1027,7 @@
         }
 
         // Fallback function to create basic certificate if template isn't available
-        async function createFallbackCertificate(dogName, regNumber, level, abbreviation, dateEarned) {
+        async function createFallbackCertificate(dogName, regNumber, certificateName, abbreviation, dateEarned) {
             const pdfDoc = await PDFLib.PDFDocument.create();
             const page = pdfDoc.addPage([792, 612]); // Landscape 8.5x11
             const { width, height } = page.getSize();
@@ -954,8 +1053,8 @@
                 color: PDFLib.rgb(0, 0, 0)
             });
 
-            // Level and abbreviation
-            page.drawText(`${level} (${abbreviation})`, {
+            // Certificate name and abbreviation
+            page.drawText(`${certificateName} (${abbreviation})`, {
                 x: width / 2 - 80,
                 y: height - 300,
                 size: 20,
@@ -968,7 +1067,7 @@
             page.drawText(`Date Earned: ${dateEarned}`, { x: 50, y: height - 420, size: 12, font: font });
 
             const pdfBytes = await pdfDoc.save();
-            downloadPDF(pdfBytes, `${dogName}-${level.replace(/\s+/g, '-')}-Title-Certificate.pdf`);
+            downloadPDF(pdfBytes, `${dogName}-${certificateName.replace(/\s+/g, '-')}-Title-Certificate.pdf`);
         }
 
         async function generateAceCertificate(level, regNumber, dogName, aceCount) {
@@ -977,9 +1076,6 @@
                 const originalText = btn.textContent;
                 btn.textContent = 'Generating...';
                 btn.disabled = true;
-
-                const abbreviation = titleAbbreviations[level] || level;
-                const aceDesignation = aceCount === 1 ? `${abbreviation}A` : `${abbreviation}Ax${aceCount}`;
 
                 // Get dog's records for this level to calculate date earned
                 const levelRecords = trialingData.filter(r => 
@@ -990,9 +1086,12 @@
                     throw new Error('No records found for this level');
                 }
 
-                // Calculate when the ACE was earned (after title completion)
+                // Calculate when the ACE was earned
                 const titleInfo = calculateTitlePoints(levelRecords);
                 const dateEarned = titleInfo.titleDate ? titleInfo.titleDate.toLocaleDateString() : new Date().toLocaleDateString();
+
+                // Get the proper ACE certificate name from Title Placement data (Column D)
+                const aceCertificateName = getAceCertificateName(level, aceCount);
 
                 // ACE certificates use dedicated Ace.pdf template
                 const templateUrl = 'https://raw.githubusercontent.com/cwagtracker/Tracker/main/templates/Ace.pdf';
@@ -1005,9 +1104,8 @@
                     }
                     templateBytes = await response.arrayBuffer();
                 } catch (fetchError) {
-                    // Fallback to creating a basic ace certificate
                     console.warn('ACE template not available, creating basic ace certificate:', fetchError);
-                    return await createFallbackAceCertificate(dogName, regNumber, level, aceDesignation, aceCount);
+                    return await createFallbackAceCertificate(dogName, regNumber, level, aceCertificateName, aceCount);
                 }
 
                 // Load the ACE template PDF
@@ -1025,7 +1123,7 @@
                     }
                 }
 
-                // Embed standard fonts first
+                // Embed fonts
                 const helvetica = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
                 const calibriFont = helvetica; // Fallback to Helvetica if Calibri not available
                 
@@ -1033,7 +1131,6 @@
                 let maiandraFont = await pdfDoc.embedFont(PDFLib.StandardFonts.TimesRomanBold); // Fallback
                 
                 try {
-                    // Try loading custom Maiandra font
                     const fontUrls = [
                         'https://cdn.jsdelivr.net/gh/cwagtracker/Tracker@main/fonts/Maiandra%20GD.TTF',
                         'https://raw.githubusercontent.com/cwagtracker/Tracker/main/fonts/Maiandra%20GD.TTF'
@@ -1064,7 +1161,7 @@
                 }
 
                 // Get handler name from global data
-                let handlerName = 'Handler Name'; // Default fallback
+                let handlerName = 'Handler Name';
                 if (globalData && globalData.length > 1) {
                     const dogData = globalData.slice(1).find(row => 
                         row && row[0] && row[0].toString().trim() === regNumber.toString().trim()
@@ -1085,7 +1182,6 @@
                         const textWidth = font.widthOfTextAtSize(text, config.size);
                         x = config.x - textWidth;
                     }
-                    // 'left' alignment uses x as-is
                     
                     page.drawText(text, {
                         x: x,
@@ -1096,13 +1192,12 @@
                     });
                 }
 
-                // 1. Date line: "This certifies that on <<Date>> the requirements have been met for the title of:"
+                // 1. Date line
                 const dateLineText = `This certifies that on ${dateEarned} the requirements have been met for the title of:`;
                 drawTextWithAlignment(firstPage, dateLineText, aceCertificateConfig.dateLine, calibriFont);
 
-                // 2. Class/Level with abbreviation (e.g., "Patrol 1 (CW-SPA)")
-                const levelText = `${level} (${aceDesignation})`;
-                drawTextWithAlignment(firstPage, levelText, aceCertificateConfig.levelAbbreviation, maiandraFont);
+                // 2. ACE Certificate name from Column D (e.g., "SCENT DETECTIVE DIVERSIONS ACE x3")
+                drawTextWithAlignment(firstPage, aceCertificateName, aceCertificateConfig.levelAbbreviation, maiandraFont);
 
                 // 3. Call name (dog name)
                 drawTextWithAlignment(firstPage, dogName, aceCertificateConfig.callName, maiandraFont);
@@ -1131,7 +1226,7 @@
         }
 
         // Updated fallback function for ACE certificates to match new layout
-        async function createFallbackAceCertificate(dogName, regNumber, level, aceDesignation, aceCount) {
+        async function createFallbackAceCertificate(dogName, regNumber, level, aceCertificateName, aceCount) {
             const pdfDoc = await PDFLib.PDFDocument.create();
             const page = pdfDoc.addPage([792, 612]); // Landscape 8.5x11
             const { width, height } = page.getSize();
@@ -1159,10 +1254,9 @@
                 color: PDFLib.rgb(0, 0, 0)
             });
 
-            // Level with ACE designation
-            const levelText = `${level} (${aceDesignation})`;
-            page.drawText(levelText, {
-                x: 670 - boldFont.widthOfTextAtSize(levelText, 30),
+            // ACE certificate name
+            page.drawText(aceCertificateName, {
+                x: 670 - boldFont.widthOfTextAtSize(aceCertificateName, 30),
                 y: 300,
                 size: 30,
                 font: boldFont,
@@ -1178,7 +1272,7 @@
                 color: PDFLib.rgb(0, 0, 0)
             });
 
-            // Handler name (placeholder - would need to be retrieved from data)
+            // Handler name
             const handlerName = 'Handler Name';
             page.drawText(handlerName, {
                 x: 460 - (boldFont.widthOfTextAtSize(handlerName, 28) / 2),
@@ -1729,7 +1823,11 @@
                 }
             }, 1000);
             
-            setTimeout(() => {
+            setTimeout(async () => {
+                // Load Title Placement data first
+                await loadTitlePlacementData();
+                
+                // Then load trialing data
                 loadDataFromFile();
             }, 100);
         });
