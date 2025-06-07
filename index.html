@@ -624,43 +624,43 @@
         const titleCertificateConfig = {
             // Registration number positioning (NEAR TOP of page)
             registrationNumber: {
-                x: 120,  // Right under "team of"
-                y: 400,  // Near top (higher Y = closer to top)
+                x: 445,  // Right under "team of"
+                y: 520,  // Near top (higher Y = closer to top)
                 size: 12,
                 color: [0, 0, 0] // Black
             },
             
             // Handler name positioning (BELOW reg number - "Karen Yuen")
             handlerName: {
-                x: 414,  // Center X (792/2)
-                y: 370,  // Below registration number
-                size: 28,
+                x: 396,  // Center X (792/2)
+                y: 470,  // Below registration number
+                size: 24,
                 color: [0, 0, 0], // Black
                 align: 'center'
             },
             
             // Dog name positioning (BELOW handler - under & symbol - "Luka")
             dogName: {
-                x: 414,  // Center X (792/2) 
-                y: 280,  // Below handler name
-                size: 28,
+                x: 396,  // Center X (792/2) 
+                y: 420,  // Below handler name
+                size: 24,
                 color: [0, 0, 0], // Black
                 align: 'center'
             },
             
             // Date positioning (MIDDLE of sheet - "On 08/25/2023, has completed...")
             dateEarned: {
-                x: 82,  // After "On " in the sentence
-                y: 240,  // Middle of page vertically (612/2 ≈ 306)
+                x: 372,  // After "On " in the sentence
+                y: 310,  // Middle of page vertically (612/2 ≈ 306)
                 size: 12,
                 color: [0, 0, 0] // Black
             },
             
             // Title and abbreviation positioning (LOWER area, right-justified)
             titleAbbreviation: {
-                x: 700,  // 3/4" from right border (792 - 54 = 738)
+                x: 738,  // 3/4" from right border (792 - 54 = 738)
                 y: 200,  // Lower area of certificate
-                size: 28,
+                size: 18,
                 color: [0, 0, 0.8], // Blue to match template
                 align: 'right' // Right-justified
             }
@@ -719,74 +719,69 @@
                 const boldFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
                 const timesBold = await pdfDoc.embedFont(PDFLib.StandardFonts.TimesRomanBold);
 
-                // Load custom Maiandra font - with multiple fallback strategies
-                let maiandraFont = timesBold; // Final fallback
-                let fontLoaded = false;
-                
-                // Strategy 1: Try loading Maiandra from GitHub
-                const fontUrls = [
-                    'https://raw.githubusercontent.com/cwagtracker/Tracker/main/fonts/Maiandra%20GD.TTF',
-                ];
-                
-                for (const fontUrl of fontUrls) {
-                    if (fontLoaded) break;
-                    
+                // Register fontkit FIRST if available
+                if (typeof fontkit !== 'undefined') {
                     try {
-                        console.log('Trying font URL:', fontUrl);
-                        const fontResponse = await fetch(fontUrl);
-                        console.log('Font response status:', fontResponse.status);
+                        pdfDoc.registerFontkit(fontkit);
+                        console.log('✅ Fontkit registered successfully');
+                    } catch (err) {
+                        console.log('⚠️ Fontkit registration failed:', err.message);
+                    }
+                }
+
+                // Load custom Maiandra font with CORS-friendly approach
+                let maiandraFont = timesBold; // Final fallback
+                
+                try {
+                    // Try loading custom font with proper CORS headers
+                    const fontUrls = [
+                        // Try jsdelivr CDN first (better CORS support)
+                        'https://cdn.jsdelivr.net/gh/cwagtracker/Tracker@main/fonts/Maiandra%20GD.TTF',
+                        // Fallback to GitHub raw
+                        'https://raw.githubusercontent.com/cwagtracker/Tracker/main/fonts/Maiandra%20GD.TTF'
+                    ];
+                    
+                    let fontLoaded = false;
+                    for (const fontUrl of fontUrls) {
+                        if (fontLoaded) break;
                         
-                        if (fontResponse.ok) {
-                            const fontBytes = await fontResponse.arrayBuffer();
-                            console.log('Font bytes loaded, size:', fontBytes.byteLength);
+                        try {
+                            console.log('🎨 Trying font URL:', fontUrl);
+                            const fontResponse = await fetch(fontUrl, {
+                                mode: 'cors',
+                                headers: {
+                                    'Accept': 'application/octet-stream, */*'
+                                }
+                            });
                             
-                            // Try with fontkit if available
-                            if (typeof fontkit !== 'undefined') {
-                                try {
-                                    console.log('Attempting to embed font with fontkit...');
-                                    maiandraFont = await pdfDoc.embedFont(fontBytes);
-                                    console.log('✅ Maiandra GD font successfully embedded with fontkit!');
-                                    fontLoaded = true;
-                                    break;
-                                } catch (fontkitError) {
-                                    console.log('❌ Fontkit embedding failed:', fontkitError.message);
+                            if (fontResponse.ok) {
+                                const fontBytes = await fontResponse.arrayBuffer();
+                                console.log('📁 Font bytes loaded, size:', fontBytes.byteLength);
+                                
+                                if (typeof fontkit !== 'undefined') {
+                                    try {
+                                        maiandraFont = await pdfDoc.embedFont(fontBytes);
+                                        console.log('✅ Maiandra GD font successfully embedded!');
+                                        fontLoaded = true;
+                                        break;
+                                    } catch (embedError) {
+                                        console.log('❌ Custom font embed failed:', embedError.message);
+                                    }
                                 }
                             }
-                            
-                            // Try without fontkit (standard fonts only)
-                            try {
-                                console.log('Attempting standard font embedding...');
-                                maiandraFont = await pdfDoc.embedFont(fontBytes, { subset: false });
-                                console.log('✅ Font embedded without fontkit!');
-                                fontLoaded = true;
-                                break;
-                            } catch (standardError) {
-                                console.log('❌ Standard embedding failed:', standardError.message);
-                            }
+                        } catch (fetchError) {
+                            console.log('⚠️ Font fetch failed for', fontUrl, ':', fetchError.message);
                         }
-                    } catch (fetchError) {
-                        console.log('Failed to fetch font:', fetchError.message);
                     }
-                }
-                
-                // Strategy 2: Use web fonts (if available)
-                if (!fontLoaded) {
-                    console.log('🔄 Trying alternative fonts...');
                     
-                    // Try Times-Roman (closest to Maiandra)
-                    try {
-                        maiandraFont = await pdfDoc.embedFont(PDFLib.StandardFonts.TimesRomanBold);
-                        console.log('✅ Using Times-Roman-Bold as Maiandra substitute');
-                        fontLoaded = true;
-                    } catch (timesError) {
-                        console.log('❌ Even Times-Roman failed, using Helvetica Bold');
-                        maiandraFont = boldFont;
+                    if (!fontLoaded) {
+                        console.log('📝 Using Times-Roman-Bold (elegant serif fallback)');
+                        maiandraFont = timesBold;
                     }
-                }
-                
-                if (!fontLoaded) {
-                    console.warn('⚠️ All font loading strategies failed, using Helvetica Bold');
-                    maiandraFont = boldFont;
+                    
+                } catch (error) {
+                    console.log('🔄 Font loading error, using Times-Roman-Bold:', error.message);
+                    maiandraFont = timesBold;
                 }
 
                 // Add registration number (under "This certifies that the team of")
