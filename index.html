@@ -491,6 +491,7 @@
     <script>
         let trialingData = [];
         let currentDogRecords = [];
+        let globalData = []; // Store raw spreadsheet data for handler lookup
         
         // Official title abbreviations
         const titleAbbreviations = {
@@ -623,25 +624,25 @@
         const titleCertificateConfig = {
             // Registration number positioning (NEAR TOP of page)
             registrationNumber: {
-                x: 120,  // Right under "team of"
-                y: 400,  // Near top (higher Y = closer to top)
+                x: 445,  // Right under "team of"
+                y: 520,  // Near top (higher Y = closer to top)
                 size: 12,
                 color: [0, 0, 0] // Black
             },
             
             // Handler name positioning (BELOW reg number - "Karen Yuen")
             handlerName: {
-                x: 414,  // Center X (792/2)
-                y: 370,  // Below registration number
-                size: 30,
+                x: 396,  // Center X (792/2)
+                y: 470,  // Below registration number
+                size: 24,
                 color: [0, 0, 0], // Black
                 align: 'center'
             },
             
             // Dog name positioning (BELOW handler - under & symbol - "Luka")
             dogName: {
-                x: 414,  // Center X (792/2) 
-                y: 280,  // Below handler name
+                x: 396,  // Center X (792/2) 
+                y: 420,  // Below handler name
                 size: 24,
                 color: [0, 0, 0], // Black
                 align: 'center'
@@ -649,17 +650,17 @@
             
             // Date positioning (MIDDLE of sheet - "On 08/25/2023, has completed...")
             dateEarned: {
-                x: 72,  // After "On " in the sentence
-                y: 240,  // Middle of page vertically (612/2 ≈ 306)
+                x: 372,  // After "On " in the sentence
+                y: 310,  // Middle of page vertically (612/2 ≈ 306)
                 size: 12,
                 color: [0, 0, 0] // Black
             },
             
             // Title and abbreviation positioning (LOWER area, right-justified)
             titleAbbreviation: {
-                x: 700,  // 3/4" from right border (792 - 54 = 738)
+                x: 738,  // 3/4" from right border (792 - 54 = 738)
                 y: 200,  // Lower area of certificate
-                size: 28,
+                size: 18,
                 color: [0, 0, 0.8], // Blue to match template
                 align: 'right' // Right-justified
             }
@@ -709,14 +710,6 @@
 
                 // Load the template PDF
                 const pdfDoc = await PDFLib.PDFDocument.load(templateBytes);
-                
-                // Register fontkit for custom font support
-                if (typeof fontkit !== 'undefined') {
-                    pdfDoc.registerFontkit(fontkit);
-                    console.log('✅ Fontkit registered successfully');
-                } else {
-                    console.error('❌ Fontkit library not loaded');
-                }
                 
                 const pages = pdfDoc.getPages();
                 const firstPage = pages[0];
@@ -806,21 +799,30 @@
                     color: PDFLib.rgb(regConfig.color[0], regConfig.color[1], regConfig.color[2])
                 });
 
-                // Add handler name (where "Karen Yuen" appears) - leave blank for manual entry
+                // Add handler name (where "Karen Yuen" appears) - using Maiandra font, black color
                 const handlerConfig = titleCertificateConfig.handlerName;
-                // Intentionally left blank - handlers will fill this in manually
+                const handlerTextWidth = maiandraFont.widthOfTextAtSize(handlerName, handlerConfig.size);
+                const handlerX = handlerConfig.align === 'center' ? handlerConfig.x - (handlerTextWidth / 2) : handlerConfig.x;
+                
+                firstPage.drawText(handlerName, {
+                    x: handlerX,
+                    y: handlerConfig.y,
+                    size: handlerConfig.size,
+                    font: maiandraFont, // Use Maiandra font
+                    color: PDFLib.rgb(0, 0, 0) // Keep black color
+                });
 
-                // Add dog name (under the & symbol, centered - where "Luka" appears)
+                // Add dog name (under the & symbol, centered - where "Luka" appears) - using Maiandra font, black color
                 const dogConfig = titleCertificateConfig.dogName;
-                const dogTextWidth = boldFont.widthOfTextAtSize(dogName, dogConfig.size);
+                const dogTextWidth = maiandraFont.widthOfTextAtSize(dogName, dogConfig.size);
                 const dogX = dogConfig.align === 'center' ? dogConfig.x - (dogTextWidth / 2) : dogConfig.x;
                 
                 firstPage.drawText(dogName, {
                     x: dogX,
                     y: dogConfig.y,
                     size: dogConfig.size,
-                    font: boldFont,
-                    color: PDFLib.rgb(dogConfig.color[0], dogConfig.color[1], dogConfig.color[2])
+                    font: maiandraFont, // Use Maiandra font
+                    color: PDFLib.rgb(0, 0, 0) // Keep black color
                 });
 
                 // Add date in sentence format: "On [Date], has completed the requirements for the title of"
@@ -1546,6 +1548,11 @@
             const workbook = XLSX.read(data, {type: 'array', cellDates: true});
             const dataSheet = workbook.Sheets['Data'] || workbook.Sheets[workbook.SheetNames[0]];
             const jsonData = XLSX.utils.sheet_to_json(dataSheet, {header: 1, dateNF: 'yyyy-mm-dd'});
+            
+            // Store raw data for handler lookup (includes headers)
+            globalData = jsonData;
+            console.log('Loaded global data with', globalData.length, 'rows');
+            console.log('Sample row:', globalData[1]); // Show first data row (row 0 is headers)
             
             trialingData = jsonData.slice(1).map(row => {
                 let processedDate = row[2];
