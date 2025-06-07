@@ -1659,29 +1659,53 @@
         }
 
         function loadDataFromFile() {
-            console.log('🔄 Legacy loadDataFromFile called, redirecting...');
-            loadTrialingDataWithFallback();
+            const timeoutId = setTimeout(() => {
+                showFileUpload();
+            }, 3000);
+
+            fetch('Data for Tracker web.xlsx')
+                .then(response => {
+                    clearTimeout(timeoutId);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+                    processExcelData(new Uint8Array(data));
+                    updateLastUpdatedDate();
+                    document.getElementById('summaryContent').innerHTML = `
+                        <div class="validation-rules">
+                            <h4>Title Requirements</h4>
+                            <ul>
+                                <li>Minimum 4 Q's required for each level</li>
+                                <li>Q's must come from at least 2 different judges</li>
+                                <li>Prerequisites must be met before advancing to higher levels</li>
+                                <li>Special case: "Investigator 3" requires either "Patrol 1" OR "Detective 2"</li>
+                                <li>Games levels require at least 2 different games (BJ, C, P, T, GB)</li>
+                                <li>Ace awards given every 10 Q's after title is earned</li>
+                            </ul>
+                        </div>
+                    `;
+                })
+                .catch(error => {
+                    clearTimeout(timeoutId);
+                    document.getElementById('lastUpdated').textContent = 'File not found';
+                    showFileUpload();
+                });
         }
 
         function showFileUpload() {
             document.getElementById('summaryContent').innerHTML = `
                 <div style="text-align: center; padding: 40px;">
-                    <h3 style="color: #17a2b8; margin-bottom: 20px;">📁 Upload Data Files</h3>
-                    <p style="margin-bottom: 20px;">Upload your Excel files to load the trialing data:</p>
+                    <h3 style="color: #17a2b8; margin-bottom: 20px;">📁 Upload Data File</h3>
+                    <p style="margin-bottom: 20px;">Select your Excel file to load the trialing data:</p>
                     
                     <div style="background: #f8f9fa; padding: 30px; border-radius: 12px; border: 2px dashed #dee2e6; margin: 20px 0;">
-                        <div style="margin-bottom: 20px;">
-                            <label style="display: block; margin-bottom: 10px; font-weight: bold;">Trialing Data:</label>
-                            <input type="file" id="manualDataFile" accept=".xlsx,.xls,.csv" style="margin-bottom: 15px;">
-                        </div>
-                        
-                        <div style="margin-bottom: 20px;">
-                            <label style="display: block; margin-bottom: 10px; font-weight: bold;">Title Placement (Optional):</label>
-                            <input type="file" id="titlePlacementFile" accept=".xlsx,.xls" style="margin-bottom: 15px;">
-                        </div>
-                        
-                        <button onclick="loadManualFiles()" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 1rem;">
-                            📤 Load Files
+                        <input type="file" id="manualDataFile" accept=".xlsx,.xls,.csv" style="margin-bottom: 15px;">
+                        <br>
+                        <button onclick="loadManualFile()" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 1rem;">
+                            📤 Load File
                         </button>
                     </div>
                     
@@ -1692,95 +1716,45 @@
             `;
         }
 
-        async function loadManualFiles() {
-            const dataFileInput = document.getElementById('manualDataFile');
-            const titleFileInput = document.getElementById('titlePlacementFile');
+        function loadManualFile() {
+            const fileInput = document.getElementById('manualDataFile');
+            const file = fileInput.files[0];
             
-            // Load Title Placement file first if provided
-            if (titleFileInput.files[0]) {
-                try {
-                    const titleFile = titleFileInput.files[0];
-                    const titleData = await readFileAsArrayBuffer(titleFile);
-                    
-                    const workbook = XLSX.read(new Uint8Array(titleData), {
-                        cellStyles: true,
-                        cellFormulas: true,
-                        cellDates: true
-                    });
-                    
-                    const sheetName = workbook.SheetNames[0];
-                    const sheet = workbook.Sheets[sheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(sheet, {header: 1});
-                    
-                    // Clear existing data
-                    titlePlacementData = {};
-                    
-                    // Create mapping
-                    jsonData.slice(1).forEach(row => {
-                        if (row && row[1] && row[2] && row[3]) {
-                            const className = row[1].toString().trim();
-                            const certificateName = row[2].toString().trim();
-                            const aceCertificateName = row[3].toString().trim();
-                            
-                            titlePlacementData[className] = {
-                                certificateName: certificateName,
-                                aceCertificateName: aceCertificateName
-                            };
-                        }
-                    });
-                    
-                    console.log('✅ Title Placement data loaded from upload:', Object.keys(titlePlacementData).length, 'classes');
-                } catch (error) {
-                    console.warn('⚠️ Error loading Title Placement file:', error.message);
-                    alert('Error loading Title Placement file. Continuing with trialing data only.');
-                }
-            }
-            
-            // Load trialing data file
-            if (!dataFileInput.files[0]) {
-                alert('Please select a trialing data file');
+            if (!file) {
+                alert('Please select a file first');
                 return;
             }
 
-            try {
-                const dataFile = dataFileInput.files[0];
-                const data = await readFileAsArrayBuffer(dataFile);
-                processExcelData(new Uint8Array(data));
-                updateLastUpdatedDate();
-                
-                document.getElementById('summaryContent').innerHTML = `
-                    <div class="validation-rules">
-                        <h4>Title Requirements</h4>
-                        <ul>
-                            <li>Minimum 4 Q's required for each level</li>
-                            <li>Q's must come from at least 2 different judges</li>
-                            <li>Prerequisites must be met before advancing to higher levels</li>
-                            <li>Special case: "Investigator 3" requires either "Patrol 1" OR "Detective 2"</li>
-                            <li>Games levels require at least 2 different games (BJ, C, P, T, GB)</li>
-                            <li>Ace awards given every 10 Q's after title is earned</li>
-                        </ul>
-                    </div>
-                `;
-                
-                const titleCount = Object.keys(titlePlacementData).length;
-                alert(`Successfully loaded ${trialingData.length} trialing records!${titleCount > 0 ? ` Also loaded ${titleCount} title mappings.` : ''}`);
-            } catch (error) {
-                alert(`Error loading trialing data file: ${error.message}`);
-            }
-        }
-
-        function readFileAsArrayBuffer(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = e => resolve(e.target.result);
-                reader.onerror = () => reject(new Error('Error reading file'));
-                reader.readAsArrayBuffer(file);
-            });
-        }
-
-        function loadManualFile() {
-            // Legacy function - redirect to new function
-            loadManualFiles();
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    processExcelData(data);
+                    updateLastUpdatedDate();
+                    document.getElementById('summaryContent').innerHTML = `
+                        <div class="validation-rules">
+                            <h4>Title Requirements</h4>
+                            <ul>
+                                <li>Minimum 4 Q's required for each level</li>
+                                <li>Q's must come from at least 2 different judges</li>
+                                <li>Prerequisites must be met before advancing to higher levels</li>
+                                <li>Special case: "Investigator 3" requires either "Patrol 1" OR "Detective 2"</li>
+                                <li>Games levels require at least 2 different games (BJ, C, P, T, GB)</li>
+                                <li>Ace awards given every 10 Q's after title is earned</li>
+                            </ul>
+                        </div>
+                    `;
+                    alert(`Successfully loaded ${trialingData.length} records!`);
+                } catch (error) {
+                    alert(`Error loading file: ${error.message}`);
+                }
+            };
+            
+            reader.onerror = function() {
+                alert('Error reading file. Please try again.');
+            };
+            
+            reader.readAsArrayBuffer(file);
         }
 
         function processExcelData(data) {
@@ -1838,7 +1812,6 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Page loaded, starting initialization...');
             document.getElementById('lastUpdated').textContent = 'Loading data...';
             
             // Check if fontkit loaded
@@ -1850,70 +1823,14 @@
                 }
             }, 1000);
             
-            // Simple, direct loading with immediate fallback
-            setTimeout(() => {
-                console.log('🔄 Starting simple loading process...');
+            setTimeout(async () => {
+                // Load Title Placement data first
+                await loadTitlePlacementData();
                 
-                // Try to load Title Placement data (don't block on this)
-                loadTitlePlacementData().catch(error => {
-                    console.log('📝 Title Placement not available:', error.message);
-                });
-                
-                // Try to load trialing data with quick fallback
-                loadTrialingDataWithFallback();
-            }, 500);
+                // Then load trialing data
+                loadDataFromFile();
+            }, 100);
         });
-
-        function loadTrialingDataWithFallback() {
-            console.log('📊 Attempting to load trialing data...');
-            
-            // Set a strict 3-second timeout
-            const timeout = setTimeout(() => {
-                console.log('⏰ Loading timeout reached, showing upload interface');
-                document.getElementById('lastUpdated').textContent = 'Upload files to get started';
-                showFileUpload();
-            }, 3000);
-
-            // Try to fetch the file
-            fetch('Data for Tracker web.xlsx')
-                .then(response => {
-                    clearTimeout(timeout);
-                    if (!response.ok) {
-                        throw new Error(`File not found (${response.status})`);
-                    }
-                    console.log('✅ Trialing data file found');
-                    return response.arrayBuffer();
-                })
-                .then(data => {
-                    console.log('📦 Processing trialing data...');
-                    processExcelData(new Uint8Array(data));
-                    updateLastUpdatedDate();
-                    showDefaultInterface();
-                    console.log('🎉 Trialing data loaded successfully');
-                })
-                .catch(error => {
-                    clearTimeout(timeout);
-                    console.log('📁 Auto-loading failed:', error.message);
-                    document.getElementById('lastUpdated').textContent = 'Upload files to get started';
-                    showFileUpload();
-                });
-        }
-
-        function showDefaultInterface() {
-            document.getElementById('summaryContent').innerHTML = `
-                <div class="validation-rules">
-                    <h4>Title Requirements</h4>
-                    <ul>
-                        <li>Minimum 4 Q's required for each level</li>
-                        <li>Q's must come from at least 2 different judges</li>
-                        <li>Prerequisites must be met before advancing to higher levels</li>
-                        <li>Special case: "Investigator 3" requires either "Patrol 1" OR "Detective 2"</li>
-                        <li>Games levels require at least 2 different games (BJ, C, P, T, GB)</li>
-                        <li>Ace awards given every 10 Q's after title is earned</li>
-                    </ul>
-                </div>
-            `;
-        }
 
         window.onclick = function(event) {
             const modal = document.getElementById('detailsModal');
