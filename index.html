@@ -491,7 +491,6 @@
     <script>
         let trialingData = [];
         let currentDogRecords = [];
-        let globalData = []; // Store raw spreadsheet data for handler lookup
         
         // Official title abbreviations
         const titleAbbreviations = {
@@ -673,7 +672,7 @@
                 btn.textContent = 'Generating...';
                 btn.disabled = true;
 
-                // Get template info based on the LEVEL, not handler name
+                // Get template info
                 const templateInfo = certificateTemplateMapping[level];
                 if (!templateInfo) {
                     throw new Error(`No certificate template mapped for level: ${level}`);
@@ -799,30 +798,21 @@
                     color: PDFLib.rgb(regConfig.color[0], regConfig.color[1], regConfig.color[2])
                 });
 
-                // Add handler name (where "Karen Yuen" appears) - using Maiandra font, black color
+                // Add handler name (where "Karen Yuen" appears) - leave blank for manual entry
                 const handlerConfig = titleCertificateConfig.handlerName;
-                const handlerTextWidth = maiandraFont.widthOfTextAtSize(handlerName, handlerConfig.size);
-                const handlerX = handlerConfig.align === 'center' ? handlerConfig.x - (handlerTextWidth / 2) : handlerConfig.x;
-                
-                firstPage.drawText(handlerName, {
-                    x: handlerX,
-                    y: handlerConfig.y,
-                    size: handlerConfig.size,
-                    font: maiandraFont, // Use Maiandra font
-                    color: PDFLib.rgb(0, 0, 0) // Keep black color
-                });
+                // Intentionally left blank - handlers will fill this in manually
 
-                // Add dog name (under the & symbol, centered - where "Luka" appears) - using Maiandra font, black color
+                // Add dog name (under the & symbol, centered - where "Luka" appears)
                 const dogConfig = titleCertificateConfig.dogName;
-                const dogTextWidth = maiandraFont.widthOfTextAtSize(dogName, dogConfig.size);
+                const dogTextWidth = boldFont.widthOfTextAtSize(dogName, dogConfig.size);
                 const dogX = dogConfig.align === 'center' ? dogConfig.x - (dogTextWidth / 2) : dogConfig.x;
                 
                 firstPage.drawText(dogName, {
                     x: dogX,
                     y: dogConfig.y,
                     size: dogConfig.size,
-                    font: maiandraFont, // Use Maiandra font
-                    color: PDFLib.rgb(0, 0, 0) // Keep black color
+                    font: boldFont,
+                    color: PDFLib.rgb(dogConfig.color[0], dogConfig.color[1], dogConfig.color[2])
                 });
 
                 // Add date in sentence format: "On [Date], has completed the requirements for the title of"
@@ -1549,15 +1539,6 @@
             const dataSheet = workbook.Sheets['Data'] || workbook.Sheets[workbook.SheetNames[0]];
             const jsonData = XLSX.utils.sheet_to_json(dataSheet, {header: 1, dateNF: 'yyyy-mm-dd'});
             
-            // Store raw data for handler lookup (includes headers)
-            globalData = jsonData;
-            console.log('📊 Loaded global data:');
-            console.log('- Total rows:', globalData.length);
-            console.log('- Headers (row 0):', globalData[0]);
-            console.log('- Sample data (row 1):', globalData[1]);
-            console.log('- Column H header:', globalData[0] ? globalData[0][7] : 'Not found');
-            console.log('- Sample Column H data:', globalData[1] ? globalData[1][7] : 'Not found');
-            
             trialingData = jsonData.slice(1).map(row => {
                 let processedDate = row[2];
                 
@@ -1582,8 +1563,6 @@
                     points: parseFloat(row[6]) || 0
                 };
             }).filter(record => record.registrationNumber && record.level);
-            
-            console.log('📋 Processed trialing data:', trialingData.length, 'records');
         }
 
         function updateLastUpdatedDate() {
