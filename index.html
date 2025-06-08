@@ -33,7 +33,19 @@
             background: linear-gradient(90deg, #2c3e50, #34495e);
             color: white;
             padding: 30px;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header-text {
             text-align: center;
+            flex: 1;
         }
 
         .header h1 {
@@ -51,6 +63,15 @@
             opacity: 0.8;
             font-size: 0.95rem;
             font-style: italic;
+        }
+
+        .logo {
+            width: 160px;
+            height: 160px;
+            background-image: url('https://raw.githubusercontent.com/cwagtracker/Tracker/main/cwags-logo.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
         }
 
         .search-section {
@@ -401,9 +422,15 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>CWAGS Tracker</h1>
-            <p>Track your dog's trialing progress, points, and title eligibility</p>
-            <div class="last-updated" id="lastUpdated">Loading data...</div>
+            <div class="header-content">
+                <div id="leftLogo" class="logo"></div>
+                <div class="header-text">
+                    <h1>CWAGS Tracker</h1>
+                    <p>Track your dog's trialing progress, points, and title eligibility</p>
+                    <div class="last-updated" id="lastUpdated">Loading data...</div>
+                </div>
+                <div id="rightLogo" class="logo"></div>
+            </div>
         </div>
 
         <div class="search-section">
@@ -1785,11 +1812,25 @@
                             
                             if (acePoints >= 10) {
                                 const aceCount = Math.floor(acePoints / 10);
-                                const abbreviation = titleAbbreviations[level] || level.substring(0, 3).toUpperCase();
-                                cellContent = `<strong style="color: #6f42c1;">${totalPoints}→Ace${aceCount > 1 ? ` (${aceCount})` : ''}</strong>`;
+                                const pointsToNextAce = 10 - (acePoints % 10);
+                                const nextAceNumber = aceCount + 1;
+                                
+                                if (pointsToNextAce === 10) {
+                                    // Exactly on an ACE milestone
+                                    cellContent = `<strong style="color: #6f42c1;">${totalPoints}→Ace${aceCount}</strong>`;
+                                } else {
+                                    // Show progress to next ACE
+                                    cellContent = `<strong style="color: #6f42c1;">${totalPoints}→${pointsToNextAce} to Ace${nextAceNumber}</strong>`;
+                                }
                                 cellStyle += ' background: linear-gradient(135deg, #e8f5e8, #d4edda);';
                             } else {
-                                cellContent = `<strong style="color: #155724;">Title!</strong>`;
+                                // Has title but less than 10 ace points
+                                const pointsToFirstAce = 10 - acePoints;
+                                if (acePoints === 0) {
+                                    cellContent = `<strong style="color: #155724;">${totalPoints}→Title!</strong>`;
+                                } else {
+                                    cellContent = `<strong style="color: #155724;">${totalPoints}→${pointsToFirstAce} to Ace</strong>`;
+                                }
                                 cellStyle += ' background: #d4edda;';
                             }
                         } else if (totalPoints > 0) {
@@ -1815,9 +1856,11 @@
 
                 <div style="margin-top: 20px; padding: 15px; background: #e7f3ff; border: 1px solid #b8daff; border-radius: 8px;">
                     <h4 style="color: #004085; margin-bottom: 10px;">Legend:</h4>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 0.9rem; color: #004085;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; font-size: 0.9rem; color: #004085;">
                         <div><strong>Title!</strong> - Title earned</div>
-                        <div><strong>X→Ace (Y)</strong> - X points, Y ACEs earned</div>
+                        <div><strong>X→Ace2</strong> - Has Ace1, earned Ace2</div>
+                        <div><strong>X→Y to Ace</strong> - Y Q's needed for first Ace</div>
+                        <div><strong>X→Y to Ace3</strong> - Y Q's needed for next Ace level</div>
                         <div><strong>X→Y pts, Z judge</strong> - Progress toward title</div>
                         <div><strong>-</strong> - No entries at this level</div>
                     </div>
