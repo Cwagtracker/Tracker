@@ -1817,28 +1817,28 @@
                                 
                                 if (pointsToNextAce === 10) {
                                     // Exactly on an ACE milestone
-                                    cellContent = `<strong style="color: #6f42c1;">${totalPoints}→Ace${aceCount}</strong>`;
+                                    cellContent = `<strong style="color: #6f42c1;">Ace${aceCount}</strong>`;
                                 } else {
-                                    // Show progress to next ACE
-                                    cellContent = `<strong style="color: #6f42c1;">${totalPoints}→${pointsToNextAce} to Ace${nextAceNumber}</strong>`;
+                                    // Show Q's needed to next ACE
+                                    cellContent = `<strong style="color: #6f42c1;">${pointsToNextAce} to Ace${nextAceNumber}</strong>`;
                                 }
                                 cellStyle += ' background: linear-gradient(135deg, #e8f5e8, #d4edda);';
                             } else {
                                 // Has title but less than 10 ace points
                                 const pointsToFirstAce = 10 - acePoints;
                                 if (acePoints === 0) {
-                                    cellContent = `<strong style="color: #155724;">${totalPoints}→Title!</strong>`;
+                                    cellContent = `<strong style="color: #155724;">Title!</strong>`;
                                 } else {
-                                    cellContent = `<strong style="color: #155724;">${totalPoints}→${pointsToFirstAce} to Ace</strong>`;
+                                    cellContent = `<strong style="color: #155724;">${pointsToFirstAce} to Ace</strong>`;
                                 }
                                 cellStyle += ' background: #d4edda;';
                             }
                         } else if (totalPoints > 0) {
                             const needMore = [];
-                            if (totalPoints < 4) needMore.push(`${4 - totalPoints} pts`);
+                            if (totalPoints < 4) needMore.push(`${4 - totalPoints} Q's`);
                             if (judgeCount < 2) needMore.push(`${2 - judgeCount} judge${judgeCount === 0 ? 's' : ''}`);
                             
-                            cellContent = `<span style="color: #856404;">${totalPoints}→${needMore.join(', ')}</span>`;
+                            cellContent = `<span style="color: #856404;">${needMore.join(', ')}</span>`;
                             cellStyle += ' background: #fff3cd;';
                         }
                     }
@@ -1858,10 +1858,10 @@
                     <h4 style="color: #004085; margin-bottom: 10px;">Legend:</h4>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; font-size: 0.9rem; color: #004085;">
                         <div><strong>Title!</strong> - Title earned</div>
-                        <div><strong>X→Ace2</strong> - Has Ace1, earned Ace2</div>
-                        <div><strong>X→Y to Ace</strong> - Y Q's needed for first Ace</div>
-                        <div><strong>X→Y to Ace3</strong> - Y Q's needed for next Ace level</div>
-                        <div><strong>X→Y pts, Z judge</strong> - Progress toward title</div>
+                        <div><strong>Ace2</strong> - Has earned Ace2</div>
+                        <div><strong>3 to Ace</strong> - Needs 3 Q's for first Ace</div>
+                        <div><strong>7 to Ace3</strong> - Needs 7 Q's for next Ace level</div>
+                        <div><strong>2 Q's, 1 judge</strong> - Progress toward title</div>
                         <div><strong>-</strong> - No entries at this level</div>
                     </div>
                 </div>
