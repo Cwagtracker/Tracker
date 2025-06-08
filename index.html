@@ -24,7 +24,6 @@
             margin: 0 auto;
             background: white;
             border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             overflow: hidden;
             position: relative;
         }
@@ -143,7 +142,6 @@
         .summary-section {
             background: white;
             border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
             overflow: hidden;
             width: 100%;
         }
@@ -1810,12 +1808,11 @@
 
             // Create header with owner info and navigation
             let html = `
-                <div style="background: linear-gradient(45deg, #667eea, #764ba2); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
-                    <h3 style="margin: 0; font-size: 1.4rem;">Owner View - ID: ${ownerId}</h3>
-                    <p style="margin: 10px 0 0 0; opacity: 0.9;">${dogCount} dog(s) found</p>
+                <div style="background: linear-gradient(45deg, #667eea, #764ba2); color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
+                    <h3 style="margin: 0; font-size: 1.4rem;">${dogCount} dog(s) found</h3>
                 </div>
 
-                <div style="text-align: center; margin-bottom: 20px;">
+                <div style="text-align: center; margin-bottom: 15px;">
                     <button onclick="showOwnerView()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 10px;">
                         ← Change Owner ID
                     </button>
@@ -1893,17 +1890,17 @@
 
             // Add dog name headers (clickable)
             dogsData.forEach(dog => {
-                const displayName = dog.dogName.length > 8 ? dog.dogName.substring(0, 8) : dog.dogName;
+                const displayName = dog.dogName.length > 6 ? dog.dogName.substring(0, 6) : dog.dogName;
                 html += `
-                    <th style="padding: 12px 8px; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: 600; min-width: 100px;">
+                    <th style="padding: 8px 4px; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: 600; width: ${75/dogsData.length}%;">
                         <a href="javascript:void(0)" onclick="searchSpecificDog('${dog.regNumber}')" 
-                           style="color: #667eea; text-decoration: none; font-weight: bold; cursor: pointer;"
+                           style="color: #667eea; text-decoration: none; font-weight: bold; cursor: pointer; font-size: 0.8rem;"
                            onmouseover="this.style.textDecoration='underline'" 
                            onmouseout="this.style.textDecoration='none'">
                             ${displayName}
                         </a>
                         <br>
-                        <small style="color: #6c757d; font-weight: normal;">${dog.regNumber}</small>
+                        <small style="color: #6c757d; font-weight: normal; font-size: 0.7rem;">${dog.regNumber}</small>
                     </th>
                 `;
             });
@@ -1918,7 +1915,7 @@
             allLevels.forEach(level => {
                 html += `
                     <tr style="border-bottom: 1px solid #f0f0f0;">
-                        <td style="padding: 10px 8px; border-right: 1px solid #dee2e6; font-weight: 600; background: #f8f9fa; position: sticky; left: 0; z-index: 5;">${level}</td>
+                        <td style="padding: 8px 4px; border-right: 1px solid #dee2e6; font-weight: 600; background: #f8f9fa; font-size: 0.8rem;">${level}</td>
                 `;
 
                 dogsData.forEach(dog => {
@@ -1969,7 +1966,7 @@
                         }
                     }
 
-                    html += `<td style="${cellStyle}">${cellContent}</td>`;
+                    html += `<td style="${cellStyle} font-size: 0.75rem;">${cellContent}</td>`;
                 });
 
                 html += '</tr>';
