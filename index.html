@@ -1,4 +1,9 @@
-<!DOCTYPE html>
+function getSortedLevels(levelSummary) {
+            const availableLevels = Object.keys(levelSummary);
+            const orderedLevels = levelOrder.filter(level => availableLevels.includes(level));
+            const unorderedLevels = availableLevels.filter(level => !levelOrder.includes(level));
+            return [...orderedLevels, ...unorderedLevels.sort()];
+        }<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -738,11 +743,24 @@
             "Games 1", "Games 2", "Games 3", "Games 4"
         ];
 
-        function getSortedLevels(levelSummary) {
-            const availableLevels = Object.keys(levelSummary);
-            const orderedLevels = levelOrder.filter(level => availableLevels.includes(level));
-            const unorderedLevels = availableLevels.filter(level => !levelOrder.includes(level));
-            return [...orderedLevels, ...unorderedLevels.sort()];
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.toString()
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
+
+        function escapeJs(text) {
+            if (!text) return '';
+            return text.toString()
+                .replace(/\\/g, "\\\\")
+                .replace(/'/g, "\\'")
+                .replace(/"/g, '\\"')
+                .replace(/\n/g, "\\n")
+                .replace(/\r/g, "\\r");
         }
 
         // Load Title Placement data with timeout and error handling
@@ -1441,10 +1459,14 @@
                 let certificateButtons = '';
                 if (hasTitleRequirements) {
                     const officialTitle = titleAbbreviations[level] || level;
+                    const escapedLevel = escapeJs(level);
+                    const escapedRegNumber = escapeJs(regNumber);
+                    const escapedDogName = escapeJs(dogName);
+                    const escapedOfficialTitle = escapeJs(officialTitle);
                     
                     // Title certificate button
                     certificateButtons += `
-                        <button class="certificate-btn" onclick="generateTitleCertificate('${level}', '${regNumber}', '${dogName}', '${officialTitle}')">
+                        <button class="certificate-btn" onclick="generateTitleCertificate('${escapedLevel}', '${escapedRegNumber}', '${escapedDogName}', '${escapedOfficialTitle}')">
                             📜 Title Certificate
                         </button>
                     `;
@@ -1453,7 +1475,7 @@
                     if (acePoints >= 10) {
                         const aceCount = Math.floor(acePoints / 10);
                         certificateButtons += `
-                            <button class="certificate-btn" onclick="generateAceCertificate('${level}', '${regNumber}', '${dogName}', ${aceCount})">
+                            <button class="certificate-btn" onclick="generateAceCertificate('${escapedLevel}', '${escapedRegNumber}', '${escapedDogName}', ${aceCount})">
                                 🏆 Ace Certificate
                             </button>
                         `;
@@ -1498,7 +1520,7 @@
                             </div>
                         </div>
                         <div class="certificate-controls">
-                            <button class="details-btn" onclick="showLevelDetails('${level}', '${dogName}')">Details</button>
+                            <button class="details-btn" onclick="showLevelDetails('${escapeJs(level)}', '${escapeJs(dogName)}')">Details</button>
                             ${certificateButtons}
                         </div>
                     </div>
@@ -1891,16 +1913,17 @@
             // Add dog name headers (clickable)
             dogsData.forEach(dog => {
                 const displayName = dog.dogName.length > 6 ? dog.dogName.substring(0, 6) : dog.dogName;
+                const escapedRegNumber = escapeJs(dog.regNumber);
                 html += `
                     <th style="padding: 8px 4px; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: 600; width: ${75/dogsData.length}%;">
-                        <a href="javascript:void(0)" onclick="searchSpecificDog('${dog.regNumber}')" 
+                        <a href="javascript:void(0)" onclick="searchSpecificDog('${escapedRegNumber}')" 
                            style="color: #667eea; text-decoration: none; font-weight: bold; cursor: pointer; font-size: 0.8rem;"
                            onmouseover="this.style.textDecoration='underline'" 
                            onmouseout="this.style.textDecoration='none'">
-                            ${displayName}
+                            ${escapeHtml(displayName)}
                         </a>
                         <br>
-                        <small style="color: #6c757d; font-weight: normal; font-size: 0.7rem;">${dog.regNumber}</small>
+                        <small style="color: #6c757d; font-weight: normal; font-size: 0.7rem;">${escapeHtml(dog.regNumber)}</small>
                     </th>
                 `;
             });
