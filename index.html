@@ -1,9 +1,4 @@
-function getSortedLevels(levelSummary) {
-            const availableLevels = Object.keys(levelSummary);
-            const orderedLevels = levelOrder.filter(level => availableLevels.includes(level));
-            const unorderedLevels = availableLevels.filter(level => !levelOrder.includes(level));
-            return [...orderedLevels, ...unorderedLevels.sort()];
-        }<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -791,6 +786,13 @@ function getSortedLevels(levelSummary) {
             }
             
             return ''; // No match found
+        }
+
+        function getSortedLevels(levelSummary) {
+            const availableLevels = Object.keys(levelSummary);
+            const orderedLevels = levelOrder.filter(level => availableLevels.includes(level));
+            const unorderedLevels = availableLevels.filter(level => !levelOrder.includes(level));
+            return [...orderedLevels, ...unorderedLevels.sort()];
         }
 
         // Load Title Placement data with timeout and error handling
