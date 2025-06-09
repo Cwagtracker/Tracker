@@ -1109,8 +1109,8 @@ downloadPDF(pdfBytes, `${registeredName}-${level.replace(/\s+/g, '-')}-Title-Cer
 
                 // Get registered name from Column I for the certificate
 const registeredName = getRegisteredName(regNumber) || dogName;
+drawTextWithAlignment(firstPage, aceCertificateName, aceCertificateConfig.levelAbbreviation, maiandraFont);
 drawTextWithAlignment(firstPage, registeredName, aceCertificateConfig.callName, maiandraFont);
-                drawTextWithAlignment(firstPage, dogName, aceCertificateConfig.callName, maiandraFont);
                 drawTextWithAlignment(firstPage, handlerName, aceCertificateConfig.handlerName, maiandraFont);
                 drawTextWithAlignment(firstPage, regNumber, aceCertificateConfig.registrationNumber, helvetica);
 
@@ -1263,7 +1263,8 @@ drawTextWithAlignment(firstPage, registeredName, aceCertificateConfig.callName, 
     // Look for Data sheet
     const dataSheet = workbook.Sheets['Data'] || workbook.Sheets[workbook.SheetNames[0]];
     const jsonData = XLSX.utils.sheet_to_json(dataSheet, {header: 1, dateNF: 'yyyy-mm-dd'});
-    
+    // Store raw data for handler name lookup AND registered name lookup
+globalData = jsonData;
     // Process the data with proper date handling AND Column I (registered name)
     trialingData = jsonData.slice(1).map(row => {
         let processedDate = row[2];
