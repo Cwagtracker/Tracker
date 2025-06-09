@@ -619,7 +619,8 @@
     <script>
         let trialingData = [];
         let currentDogRecords = [];
-        let globalData = []; // Store raw spreadsheet data for handler lookup
+        let globalData = []; // Keep for backward compatibility if needed
+        let dogInfoData = {}; // NEW: Store dog info lookup data
         let titlePlacementData = {}; // Store Title Placement mapping data
         
         // Level prerequisites mapping
@@ -758,25 +759,42 @@
                 .replace(/\r/g, "\\r");
         }
 
-        // Helper function to get handler name with robust matching
-        function getHandlerName(regNumber) {
+        // Helper function to get dog info with robust matching
+        function getDogInfo(regNumber) {
+            if (!regNumber) return { callName: '', handlerName: '', registeredName: '' };
+            
+            const searchRegNumber = regNumber.toString().trim().toLowerCase();
+            
+            // Check if we have dog info data
+            if (dogInfoData[searchRegNumber]) {
+                return dogInfoData[searchRegNumber];
+            }
+            
+            // Fallback to original method if dog info sheet not available
+            const handlerName = getHandlerNameFallback(regNumber);
+            return {
+                callName: '',
+                handlerName: handlerName,
+                registeredName: ''
+            };
+        }
+
+        // Keep the old function as fallback
+        function getHandlerNameFallback(regNumber) {
             if (!globalData || globalData.length <= 1 || !regNumber) return '';
             
             const searchRegNumber = regNumber.toString().trim().toLowerCase();
             
-            // Search through all data rows (skip header row)
             for (let i = 1; i < globalData.length; i++) {
                 const row = globalData[i];
-                if (!row || !row[0]) continue; // Skip empty rows
+                if (!row || !row[0]) continue;
                 
                 const rowRegNumber = row[0].toString().trim().toLowerCase();
                 
-                // Try exact match first
                 if (rowRegNumber === searchRegNumber) {
                     return row[7] ? row[7].toString().trim() : '';
                 }
                 
-                // Try normalized match (remove spaces, dashes)
                 const normalizedSearch = searchRegNumber.replace(/[-\s]/g, '');
                 const normalizedRow = rowRegNumber.replace(/[-\s]/g, '');
                 
@@ -785,59 +803,28 @@
                 }
             }
             
-            return ''; // No match found
-        }
-
-        // NEW: Helper function to get registered name from Column I for certificates
-function getRegisteredName(regNumber) {
-    if (!globalData || globalData.length <= 1 || !regNumber) return '';
-    
-    const searchRegNumber = regNumber.toString().trim().toLowerCase();
-    
-    // Search through all data rows (skip header row)
-    for (let i = 1; i < globalData.length; i++) {
-        const row = globalData[i];
-        if (!row || !row[0]) continue; // Skip empty rows
-        
-        const rowRegNumber = row[0].toString().trim().toLowerCase();
-        
-        // Try exact match first
-        if (rowRegNumber === searchRegNumber) {
-            // Return Column I (index 8) if available, fallback to call name (Column B, index 1)
-            return row[8] ? row[8].toString().trim() : (row[1] ? row[1].toString().trim() : '');
+            return '';
         }
         
-        // Try normalized match (remove spaces, dashes)
-        const normalizedSearch = searchRegNumber.replace(/[-\s]/g, '');
-        const normalizedRow = rowRegNumber.replace(/[-\s]/g, '');
-        
-        if (normalizedRow === normalizedSearch) {
-            // Return Column I (index 8) if available, fallback to call name (Column B, index 1)
-            return row[8] ? row[8].toString().trim() : (row[1] ? row[1].toString().trim() : '');
-        }
-    }
-    
-    return ''; // No match found
-}
-        function getSortedLevels(levelSummary) {
+         function getSortedLevels(levelSummary) {
             const availableLevels = Object.keys(levelSummary);
             const orderedLevels = levelOrder.filter(level => availableLevels.includes(level));
             const unorderedLevels = availableLevels.filter(level => !levelOrder.includes(level));
             return [...orderedLevels, ...unorderedLevels.sort()];
         }
 
-        // Load Title Placement data with timeout and error handling
-        async function loadTitlePlacementData() {
+        // Load Dog Info data with timeout and error handling
+        async function loadDogInfoData() {
             return new Promise((resolve) => {
-                // Set a 2 second timeout to prevent hanging
                 const timeoutId = setTimeout(() => {
-                    console.warn('⏰ Title Placement loading timed out - continuing without it');
+                    console.warn('⏰ Dog Info loading timed out - using fallback methods');
                     resolve(false);
-                }, 2000);
+                }, 3000);
 
-                fetch('Title Placement.xlsx', {
+                fetch('Dog Info.xlsx', {
                     method: 'GET',
-                    cache: 'no-cache'
+                    cache: 'no-cache',
+                    signal: /* TODO: Replace with AbortController manually */ undefined
                 })
                 .then(response => {
                     clearTimeout(timeoutId);
@@ -847,38 +834,107 @@ function getRegisteredName(regNumber) {
                     return response.arrayBuffer();
                 })
                 .then(fileContent => {
-                    const workbook = XLSX.read(new Uint8Array(fileContent), { 
-                        cellStyles: true, 
-                        cellFormulas: true, 
-                        cellDates: true 
-                    });
-                    
-                    const sheetName = workbook.SheetNames[0];
-                    const sheet = workbook.Sheets[sheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(sheet, {header: 1});
-                    
-                    let loadedCount = 0;
-                    jsonData.slice(1).forEach(row => {
-                        if (row && row[1] && row[2] && row[3]) {
-                            const className = row[1].toString().trim();
-                            const certificateName = row[2].toString().trim();
-                            const aceCertificateName = row[3].toString().trim();
-                            
-                            titlePlacementData[className] = {
-                                certificateName: certificateName,
-                                aceCertificateName: aceCertificateName
-                            };
-                            loadedCount++;
-                        }
-                    });
-                    
-                    console.log('✅ Title Placement data loaded:', loadedCount, 'classes');
-                    resolve(true);
+                    try {
+                        const workbook = XLSX.read(new Uint8Array(fileContent), { 
+                            cellStyles: true, 
+                            cellFormulas: true, 
+                            cellDates: true 
+                        });
+                        
+                        const sheetName = workbook.SheetNames[0];
+                        const sheet = workbook.Sheets[sheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(sheet, {header: 1});
+                        
+                        let loadedCount = 0;
+                        // Skip header row (index 0)
+                        jsonData.slice(1).forEach(row => {
+                            if (row && row[0]) { // Must have registration number
+                                const regNumber = row[0].toString().trim().toLowerCase();
+                                const callName = (row[1] || '').toString().trim();
+                                const handlerName = (row[2] || '').toString().trim();
+                                const registeredName = (row[3] || '').toString().trim();
+                                
+                                dogInfoData[regNumber] = {
+                                    callName: callName,
+                                    handlerName: handlerName,
+                                    registeredName: registeredName
+                                };
+                                loadedCount++;
+                            }
+                        });
+                        
+                        console.log('✅ Dog Info data loaded:', loadedCount, 'dogs');
+                        resolve(true);
+                    } catch (parseError) {
+                        console.error('Dog Info parse error:', parseError);
+                        resolve(false);
+                    }
                 })
                 .catch(error => {
                     clearTimeout(timeoutId);
-                    console.warn('⚠️ Could not load Title Placement data:', error.message);
-                    console.log('💡 Continuing with original certificate names');
+                    console.warn('⚠️ Dog Info load failed:', error.message);
+                    resolve(false);
+                });
+            });
+        }
+
+        // Load Title Placement data with timeout and error handling
+        async function loadTitlePlacementData() {
+            return new Promise((resolve) => {
+                const timeoutId = setTimeout(() => {
+                    console.warn('⏰ Title Placement loading timed out - continuing without it');
+                    resolve(false);
+                }, 3000);
+
+                fetch('Title Placement.xlsx', {
+                    method: 'GET',
+                    cache: 'no-cache',
+                    signal: /* TODO: Replace with AbortController manually */ undefined
+                })
+                .then(response => {
+                    clearTimeout(timeoutId);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(fileContent => {
+                    try {
+                        const workbook = XLSX.read(new Uint8Array(fileContent), { 
+                            cellStyles: true, 
+                            cellFormulas: true, 
+                            cellDates: true 
+                        });
+                        
+                        const sheetName = workbook.SheetNames[0];
+                        const sheet = workbook.Sheets[sheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(sheet, {header: 1});
+                        
+                        let loadedCount = 0;
+                        jsonData.slice(1).forEach(row => {
+                            if (row && row[1] && row[2] && row[3]) {
+                                const className = row[1].toString().trim();
+                                const certificateName = row[2].toString().trim();
+                                const aceCertificateName = row[3].toString().trim();
+                                
+                                titlePlacementData[className] = {
+                                    certificateName: certificateName,
+                                    aceCertificateName: aceCertificateName
+                                };
+                                loadedCount++;
+                            }
+                        });
+                        
+                        console.log('✅ Title Placement data loaded:', loadedCount, 'classes');
+                        resolve(true);
+                    } catch (parseError) {
+                        console.error('Title Placement parse error:', parseError);
+                        resolve(false);
+                    }
+                })
+                .catch(error => {
+                    clearTimeout(timeoutId);
+                    console.warn('⚠️ Title Placement load failed:', error.message);
                     resolve(false);
                 });
             });
@@ -921,6 +977,11 @@ function getRegisteredName(regNumber) {
                 const btn = event.target;
                 btn.textContent = 'Generating...';
                 btn.disabled = true;
+
+                // Get dog information
+                const dogInfo = getDogInfo(regNumber);
+                const handlerName = dogInfo.handlerName || 'Handler Name';
+                const registeredName = dogInfo.registeredName || dogInfo.callName || dogName;
 
                 const templateInfo = certificateTemplateMapping[level];
                 if (!templateInfo) throw new Error(`No template mapped for level: ${level}`);
@@ -966,9 +1027,6 @@ function getRegisteredName(regNumber) {
                     } catch (e) { /* use fallback */ }
                 }
 
-                // Get handler name
-                const handlerName = getHandlerName(regNumber);
-
                 // Add text to certificate
                 const regConfig = titleCertificateConfig.registrationNumber;
                 firstPage.drawText(regNumber, {
@@ -984,13 +1042,10 @@ function getRegisteredName(regNumber) {
                     color: PDFLib.rgb(0, 0, 0)
                 });
 
-               // Get registered name from Column I for the certificate
-const registeredName = getRegisteredName(regNumber) || dogName;
-
-const dogConfig = titleCertificateConfig.dogName;
-const dogTextWidth = maiandraFont.widthOfTextAtSize(registeredName, dogConfig.size);
-const dogX = dogConfig.x - (dogTextWidth / 2);
-firstPage.drawText(registeredName, {
+                const dogConfig = titleCertificateConfig.dogName;
+                const dogTextWidth = maiandraFont.widthOfTextAtSize(registeredName, dogConfig.size);
+                const dogX = dogConfig.x - (dogTextWidth / 2);
+                firstPage.drawText(registeredName, {
                     x: dogX, y: dogConfig.y, size: dogConfig.size, font: maiandraFont,
                     color: PDFLib.rgb(0, 0, 0)
                 });
@@ -1020,7 +1075,7 @@ firstPage.drawText(registeredName, {
 
                 const pdfBytes = await pdfDoc.save();
                 
-downloadPDF(pdfBytes, `${registeredName}-${level.replace(/\s+/g, '-')}-Title-Certificate.pdf`);
+                downloadPDF(pdfBytes, `${registeredName}-${level.replace(/\s+/g, '-')}-Title-Certificate.pdf`);
                 btn.textContent = '📜 Title Certificate';
                 btn.disabled = false;
 
@@ -1040,6 +1095,11 @@ downloadPDF(pdfBytes, `${registeredName}-${level.replace(/\s+/g, '-')}-Title-Cer
                 const btn = event.target;
                 btn.textContent = 'Generating...';
                 btn.disabled = true;
+
+                // Get dog information
+                const dogInfo = getDogInfo(regNumber);
+                const handlerName = dogInfo.handlerName || 'Handler Name';
+                const registeredName = dogInfo.registeredName || dogInfo.callName || dogName;
 
                 const levelRecords = trialingData.filter(r => r.registrationNumber === regNumber && r.level === level);
                 if (levelRecords.length === 0) throw new Error('No records found for this level');
@@ -1083,10 +1143,6 @@ downloadPDF(pdfBytes, `${registeredName}-${level.replace(/\s+/g, '-')}-Title-Cer
                     } catch (e) { /* use fallback */ }
                 }
 
-                // Get handler name
-                let handlerName = getHandlerName(regNumber);
-                if (!handlerName) handlerName = 'Handler Name'; // Fallback for certificates
-
                 // Helper function for text alignment
                 function drawTextWithAlignment(page, text, config, font) {
                     let x = config.x;
@@ -1107,10 +1163,8 @@ downloadPDF(pdfBytes, `${registeredName}-${level.replace(/\s+/g, '-')}-Title-Cer
                 const dateLineText = `This certifies that on ${dateEarned} the requirements have been met for the title of:`;
                 drawTextWithAlignment(firstPage, dateLineText, aceCertificateConfig.dateLine, helvetica);
 
-                // Get registered name from Column I for the certificate
-const registeredName = getRegisteredName(regNumber) || dogName;
-drawTextWithAlignment(firstPage, registeredName, aceCertificateConfig.callName, maiandraFont);
-                drawTextWithAlignment(firstPage, dogName, aceCertificateConfig.callName, maiandraFont);
+                drawTextWithAlignment(firstPage, aceCertificateName, aceCertificateConfig.levelAbbreviation, maiandraFont);
+                drawTextWithAlignment(firstPage, registeredName, aceCertificateConfig.callName, maiandraFont);
                 drawTextWithAlignment(firstPage, handlerName, aceCertificateConfig.handlerName, maiandraFont);
                 drawTextWithAlignment(firstPage, regNumber, aceCertificateConfig.registrationNumber, helvetica);
 
@@ -1148,50 +1202,58 @@ drawTextWithAlignment(firstPage, registeredName, aceCertificateConfig.callName, 
         }
 
         function loadDataFromFile() {
-            console.log('Starting data load process...');
+            console.log('Starting main data load...');
             
-            // Set a timeout to show manual upload option if loading takes too long
+            // Shorter timeout to prevent hanging
             const timeoutId = setTimeout(() => {
-                console.log('Load timeout - showing manual upload option');
+                console.log('Main data load timeout - showing upload option');
+                document.getElementById('lastUpdated').textContent = 'Auto-load timed out';
                 showFileUpload();
-            }, 3000);
+            }, 5000);
 
-            // First try to load the expected file
-            fetch('Data for Tracker web.xlsx')
-                .then(response => {
-                    clearTimeout(timeoutId);
-                    console.log('Fetch response status:', response.status);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    console.log('File found, reading data...');
-                    return response.arrayBuffer();
-                })
-                .then(data => {
-                    console.log('Data received, size:', data.byteLength, 'bytes');
-                    processExcelData(new Uint8Array(data));
-                    updateLastUpdatedDate();
-                    document.getElementById('summaryContent').innerHTML = `
-                        <div class="validation-rules">
-                            <h4>Title Requirements</h4>
-                            <ul>
-                                <li>Minimum 4 points required for each level</li>
-                                <li>Points must come from at least 2 different judges</li>
-                                <li>Prerequisites must be met before advancing to higher levels</li>
-                                <li>Special case: "Investigator 3" requires either "Patrol 1" OR "Detective 2"</li>
-                                <li>Games levels require at least 2 different games (BJ, C, P, T, GB)</li>
-                                <li>Ace awards given every 10 points after title is earned</li>
-                            </ul>
-                        </div>
-                    `;
-                    console.log('Data processing complete');
-                })
-                .catch(error => {
-                    clearTimeout(timeoutId);
-                    console.error('Error loading data:', error);
-                    document.getElementById('lastUpdated').textContent = 'File not found';
-                    showFileUpload();
-                });
+            fetch('Data for Tracker web.xlsx', {
+                method: 'GET',
+                cache: 'no-cache',
+                signal: /* TODO: Replace with AbortController manually */ undefined // 10 second timeout
+            })
+            .then(response => {
+                clearTimeout(timeoutId);
+                console.log('Main data fetch response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                console.log('Main data file found, reading...');
+                return response.arrayBuffer();
+            })
+            .then(data => {
+                console.log('Main data received, size:', data.byteLength, 'bytes');
+                processExcelData(new Uint8Array(data));
+                updateLastUpdatedDate();
+                showInitialContent();
+                console.log('✅ All data processing complete');
+            })
+            .catch(error => {
+                clearTimeout(timeoutId);
+                console.error('❌ Error loading main data:', error);
+                document.getElementById('lastUpdated').textContent = 'Main data file not found';
+                showFileUpload();
+            });
+        }
+
+        function showInitialContent() {
+            document.getElementById('summaryContent').innerHTML = `
+                <div class="validation-rules">
+                    <h4>Title Requirements</h4>
+                    <ul>
+                        <li>Minimum 4 points required for each level</li>
+                        <li>Points must come from at least 2 different judges</li>
+                        <li>Prerequisites must be met before advancing to higher levels</li>
+                        <li>Special case: "Investigator 3" requires either "Patrol 1" OR "Detective 2"</li>
+                        <li>Games levels require at least 2 different games (BJ, C, P, T, GB)</li>
+                        <li>Ace awards given every 10 points after title is earned</li>
+                    </ul>
+                </div>
+            `;
         }
 
         function showFileUpload() {
@@ -1230,19 +1292,7 @@ drawTextWithAlignment(firstPage, registeredName, aceCertificateConfig.callName, 
                     const data = new Uint8Array(e.target.result);
                     processExcelData(data);
                     updateLastUpdatedDate();
-                    document.getElementById('summaryContent').innerHTML = `
-                        <div class="validation-rules">
-                            <h4>Title Requirements</h4>
-                            <ul>
-                                <li>Minimum 4 points required for each level</li>
-                                <li>Points must come from at least 2 different judges</li>
-                                <li>Prerequisites must be met before advancing to higher levels</li>
-                                <li>Special case: "Investigator 3" requires either "Patrol 1" OR "Detective 2"</li>
-                                <li>Games levels require at least 2 different games (BJ, C, P, T, GB)</li>
-                                <li>Ace awards given every 10 points after title is earned</li>
-                            </ul>
-                        </div>
-                    `;
+                    showInitialContent();
                     alert(`Successfully loaded ${trialingData.length} records!`);
                 } catch (error) {
                     console.error('Error loading manual file:', error);
@@ -1257,49 +1307,45 @@ drawTextWithAlignment(firstPage, registeredName, aceCertificateConfig.callName, 
             reader.readAsArrayBuffer(file);
         }
 
-    function processExcelData(data) {
-    const workbook = XLSX.read(data, {type: 'array', cellDates: true});
-    
-    // Look for Data sheet
-    const dataSheet = workbook.Sheets['Data'] || workbook.Sheets[workbook.SheetNames[0]];
-    const jsonData = XLSX.utils.sheet_to_json(dataSheet, {header: 1, dateNF: 'yyyy-mm-dd'});
-    
-    // Process the data with proper date handling AND Column I (registered name)
-    trialingData = jsonData.slice(1).map(row => {
-        let processedDate = row[2];
-        
-        // Handle different date formats
-        if (typeof processedDate === 'number') {
-            // Excel date serial number - convert to proper date
-            processedDate = XLSX.SSF.parse_date_code(processedDate);
-            processedDate = new Date(processedDate.y, processedDate.m - 1, processedDate.d);
-        } else if (typeof processedDate === 'string') {
-            // String date - parse it
-            processedDate = new Date(processedDate);
-        } else if (processedDate instanceof Date) {
-            // Already a date object
-            processedDate = processedDate;
-        } else {
-            // Invalid date
-            processedDate = null;
+        function processExcelData(data) {
+            const workbook = XLSX.read(data, {type: 'array', cellDates: true});
+            
+            // Look for Data sheet
+            const dataSheet = workbook.Sheets['Data'] || workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(dataSheet, {header: 1, dateNF: 'yyyy-mm-dd'});
+            
+            // Store raw data for fallback methods
+            globalData = jsonData;
+            
+            // Process the data - now only need basic trialing info
+            trialingData = jsonData.slice(1).map(row => {
+                let processedDate = row[2];
+                
+                // Handle different date formats
+                if (typeof processedDate === 'number') {
+                    processedDate = XLSX.SSF.parse_date_code(processedDate);
+                    processedDate = new Date(processedDate.y, processedDate.m - 1, processedDate.d);
+                } else if (typeof processedDate === 'string') {
+                    processedDate = new Date(processedDate);
+                } else if (processedDate instanceof Date) {
+                    processedDate = processedDate;
+                } else {
+                    processedDate = null;
+                }
+                
+                return {
+                    registrationNumber: row[0],       // Column A
+                    callName: row[1],                 // Column B (for fallback)
+                    date: processedDate,              // Column C
+                    level: row[3],                    // Column D
+                    results: row[4],                  // Column E
+                    judge: row[5],                    // Column F
+                    points: parseFloat(row[6]) || 0   // Column G
+                };
+            }).filter(record => record.registrationNumber && record.level);
+            
+            console.log('Data processed:', trialingData.length, 'records');
         }
-        
-        return {
-            registrationNumber: row[0],       // Column A
-            callName: row[1],                 // Column B  
-            date: processedDate,              // Column C
-            level: row[3],                    // Column D
-            results: row[4],                  // Column E
-            judge: row[5],                    // Column F
-            points: parseFloat(row[6]) || 0,  // Column G
-            // NEW: Add Column I (registered name for certificates)
-            registeredName: row[8] || row[1]  // Column I, fallback to call name if empty
-        };
-    }).filter(record => record.registrationNumber && record.level);
-    
-    console.log('Data processed:', trialingData.length, 'records');
-}
-
         function updateLastUpdatedDate() {
             if (trialingData.length === 0) {
                 document.getElementById('lastUpdated').textContent = 'No data available';
@@ -1411,11 +1457,12 @@ drawTextWithAlignment(firstPage, registeredName, aceCertificateConfig.callName, 
         }
 
         function displaySummary(records) {
-            const dogName = records[0].callName || 'Unknown';
             const regNumber = records[0].registrationNumber;
+            const dogInfo = getDogInfo(regNumber);
             
-            // Get handler name from Column H (index 7)
-            const handlerName = getHandlerName(regNumber);
+            // Use dog info data, fallback to trialing data
+            const dogName = dogInfo.callName || records[0].callName || 'Unknown';
+            const handlerName = dogInfo.handlerName;
             
             const levelSummary = {};
             
@@ -1914,10 +1961,12 @@ drawTextWithAlignment(firstPage, registeredName, aceCertificateConfig.callName, 
             // Calculate data for each dog
             const dogsData = dogRegistrations.map(regNumber => {
                 const dogRecords = dogsByReg[regNumber];
-                const dogName = dogRecords[0].callName || 'Unknown';
+                const dogInfo = getDogInfo(regNumber);
                 
-                // Get handler name
-                const handlerName = getHandlerName(regNumber);
+                // Use dog info data, fallback to trialing data
+                const dogName = dogInfo.callName || dogRecords[0].callName || 'Unknown';
+                const handlerName = dogInfo.handlerName;
+                const registeredName = dogInfo.registeredName;
 
                 // Calculate level summaries
                 const levelSummary = {};
@@ -1945,6 +1994,7 @@ drawTextWithAlignment(firstPage, registeredName, aceCertificateConfig.callName, 
                     regNumber,
                     dogName,
                     handlerName,
+                    registeredName,
                     levelSummary
                 };
             });
@@ -1958,10 +2008,13 @@ drawTextWithAlignment(firstPage, registeredName, aceCertificateConfig.callName, 
                                 <th style="padding: 12px 8px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; position: sticky; left: 0; background: #f8f9fa; z-index: 10;">Level</th>
             `;
 
-            // Add dog name headers (clickable)
+            // Add dog name headers (clickable) - FIXED VERSION
             dogsData.forEach(dog => {
-                const displayName = dog.dogName.length > 6 ? dog.dogName.substring(0, 6) : dog.dogName;
+                const displayName = (dog.registeredName && dog.registeredName.length > 6) ? 
+                    dog.registeredName.substring(0, 6) : 
+                    (dog.registeredName || dog.dogName);
                 const escapedRegNumber = escapeJs(dog.regNumber);
+                
                 html += `
                     <th style="padding: 8px 4px; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: 600; width: ${75/dogsData.length}%;">
                         <a href="javascript:void(0)" onclick="searchSpecificDog('${escapedRegNumber}')" 
@@ -2082,8 +2135,7 @@ drawTextWithAlignment(firstPage, registeredName, aceCertificateConfig.callName, 
                 </div>
             `;
         }
-
-        // Initialize - but make it more immediate
+                            // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 CWAGS Tracker initializing...');
             document.getElementById('lastUpdated').textContent = 'Loading data...';
@@ -2097,27 +2149,10 @@ drawTextWithAlignment(firstPage, registeredName, aceCertificateConfig.callName, 
                 }
             }, 1000);
             
-            // Load files with proper sequencing and error handling
-            setTimeout(async () => {
-                try {
-                    console.log('📊 Step 1: Loading Title Placement data...');
-                    const titlePlacementLoaded = await loadTitlePlacementData();
-                    
-                    if (titlePlacementLoaded) {
-                        console.log('✅ Step 1 complete: Title Placement data ready');
-                    } else {
-                        console.log('⚠️ Step 1 skipped: Title Placement not available');
-                    }
-                    
-                    console.log('📁 Step 2: Loading main trialing data...');
-                    loadDataFromFile();
-                    
-                } catch (error) {
-                    console.error('❌ Initialization error:', error);
-                    document.getElementById('lastUpdated').textContent = 'Initialization failed';
-                    showFileUpload();
-                }
-            }, 200);
+            // Load files sequentially with proper error handling
+            setTimeout(() => {
+                loadAllData();
+            }, 500);
         });
 
         // Close modal when clicking outside of it
