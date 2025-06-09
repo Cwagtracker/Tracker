@@ -1919,6 +1919,7 @@ globalData = jsonData;
                 
                 // Get handler name
                 const handlerName = getHandlerName(regNumber);
+                 const registeredName = getRegisteredName(regNumber); // ADD THIS LINE
 
                 // Calculate level summaries
                 const levelSummary = {};
@@ -1946,6 +1947,7 @@ globalData = jsonData;
                     regNumber,
                     dogName,
                     handlerName,
+                    registeredName,
                     levelSummary
                 };
             });
@@ -1961,21 +1963,24 @@ globalData = jsonData;
 
             // Add dog name headers (clickable)
             dogsData.forEach(dog => {
-                const displayName = dog.dogName.length > 6 ? dog.dogName.substring(0, 6) : dog.dogName;
-                const escapedRegNumber = escapeJs(dog.regNumber);
-                html += `
-                    <th style="padding: 8px 4px; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: 600; width: ${75/dogsData.length}%;">
-                        <a href="javascript:void(0)" onclick="searchSpecificDog('${escapedRegNumber}')" 
-                           style="color: #667eea; text-decoration: none; font-weight: bold; cursor: pointer; font-size: 0.8rem;"
-                           onmouseover="this.style.textDecoration='underline'" 
-                           onmouseout="this.style.textDecoration='none'">
-                            ${escapeHtml(displayName)}
-                        </a>
-                        <br>
-                        <small style="color: #6c757d; font-weight: normal; font-size: 0.7rem;">${escapeHtml(dog.regNumber)}</small>
-                    </th>
-                `;
-            });
+    const displayName = (dog.registeredName && dog.registeredName.length > 6) ? 
+        dog.registeredName.substring(0, 6) : 
+        (dog.registeredName || dog.dogName);
+    const escapedRegNumber = escapeJs(dog.regNumber);
+    
+    html += `
+        <th style="padding: 8px 4px; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: 600; width: ${75/dogsData.length}%;">
+            <a href="javascript:void(0)" onclick="searchSpecificDog('${escapedRegNumber}')" 
+               style="color: #667eea; text-decoration: none; font-weight: bold; cursor: pointer; font-size: 0.8rem;"
+               onmouseover="this.style.textDecoration='underline'" 
+               onmouseout="this.style.textDecoration='none'">
+                ${escapeHtml(displayName)}
+            </a>
+            <br>
+            <small style="color: #6c757d; font-weight: normal; font-size: 0.7rem;">${escapeHtml(dog.regNumber)}</small>
+        </th>
+    `;
+});
 
             html += `
                             </tr>
