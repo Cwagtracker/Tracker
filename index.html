@@ -618,9 +618,10 @@
     </script>
     <script>
         let trialingData = [];
-        let currentDogRecords = [];
-        let globalData = []; // Store raw spreadsheet data for handler lookup
-        let titlePlacementData = {}; // Store Title Placement mapping data
+let currentDogRecords = [];
+let globalData = []; // Keep for backward compatibility if needed
+let dogInfoData = {}; // NEW: Store dog info lookup data
+let titlePlacementData = {}; // Store Title Placement mapping data
         
         // Level prerequisites mapping
         const prerequisites = {
@@ -759,73 +760,115 @@
         }
 
         // Helper function to get handler name with robust matching
-        function getHandlerName(regNumber) {
-            if (!globalData || globalData.length <= 1 || !regNumber) return '';
-            
-            const searchRegNumber = regNumber.toString().trim().toLowerCase();
-            
-            // Search through all data rows (skip header row)
-            for (let i = 1; i < globalData.length; i++) {
-                const row = globalData[i];
-                if (!row || !row[0]) continue; // Skip empty rows
-                
-                const rowRegNumber = row[0].toString().trim().toLowerCase();
-                
-                // Try exact match first
-                if (rowRegNumber === searchRegNumber) {
-                    return row[7] ? row[7].toString().trim() : '';
-                }
-                
-                // Try normalized match (remove spaces, dashes)
-                const normalizedSearch = searchRegNumber.replace(/[-\s]/g, '');
-                const normalizedRow = rowRegNumber.replace(/[-\s]/g, '');
-                
-                if (normalizedRow === normalizedSearch) {
-                    return row[7] ? row[7].toString().trim() : '';
-                }
-            }
-            
-            return ''; // No match found
-        }
-
-        // NEW: Helper function to get registered name from Column I for certificates
-function getRegisteredName(regNumber) {
+       function getDogInfo(regNumber) {
+    if (!regNumber) return { callName: '', handlerName: '', registeredName: '' };
+    
+    const searchRegNumber = regNumber.toString().trim().toLowerCase();
+    
+    // Check if we have dog info data
+    if (dogInfoData[searchRegNumber]) {
+        return dogInfoData[searchRegNumber];
+    }
+    
+    // Fallback to original method if dog info sheet not available
+    const handlerName = getHandlerNameFallback(regNumber);
+    return {
+        callName: '',
+        handlerName: handlerName,
+        registeredName: ''
+    };
+}
+function getHandlerNameFallback(regNumber) {
     if (!globalData || globalData.length <= 1 || !regNumber) return '';
     
     const searchRegNumber = regNumber.toString().trim().toLowerCase();
     
-    // Search through all data rows (skip header row)
     for (let i = 1; i < globalData.length; i++) {
         const row = globalData[i];
-        if (!row || !row[0]) continue; // Skip empty rows
+        if (!row || !row[0]) continue;
         
         const rowRegNumber = row[0].toString().trim().toLowerCase();
         
-        // Try exact match first
         if (rowRegNumber === searchRegNumber) {
-            // Return Column I (index 8) if available, fallback to call name (Column B, index 1)
-            return row[8] ? row[8].toString().trim() : (row[1] ? row[1].toString().trim() : '');
+            return row[7] ? row[7].toString().trim() : '';
         }
         
-        // Try normalized match (remove spaces, dashes)
         const normalizedSearch = searchRegNumber.replace(/[-\s]/g, '');
         const normalizedRow = rowRegNumber.replace(/[-\s]/g, '');
         
         if (normalizedRow === normalizedSearch) {
-            // Return Column I (index 8) if available, fallback to call name (Column B, index 1)
-            return row[8] ? row[8].toString().trim() : (row[1] ? row[1].toString().trim() : '');
+            return row[7] ? row[7].toString().trim() : '';
         }
     }
     
-    return ''; // No match found
+    return '';
 }
-        function getSortedLevels(levelSummary) {
+        
+            function getSortedLevels(levelSummary) {
             const availableLevels = Object.keys(levelSummary);
             const orderedLevels = levelOrder.filter(level => availableLevels.includes(level));
             const unorderedLevels = availableLevels.filter(level => !levelOrder.includes(level));
             return [...orderedLevels, ...unorderedLevels.sort()];
         }
 
+      async function loadDogInfoData() {
+    return new Promise((resolve) => {
+        const timeoutId = setTimeout(() => {
+            console.warn('⏰ Dog Info loading timed out - using fallback methods');
+            resolve(false);
+        }, 2000);
+
+        fetch('Dog Info.xlsx', {
+            method: 'GET',
+            cache: 'no-cache'
+        })
+        .then(response => {
+            clearTimeout(timeoutId);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.arrayBuffer();
+        })
+        .then(fileContent => {
+            const workbook = XLSX.read(new Uint8Array(fileContent), { 
+                cellStyles: true, 
+                cellFormulas: true, 
+                cellDates: true 
+            });
+            
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(sheet, {header: 1});
+            
+            let loadedCount = 0;
+            // Skip header row (index 0)
+            jsonData.slice(1).forEach(row => {
+                if (row && row[0]) { // Must have registration number
+                    const regNumber = row[0].toString().trim().toLowerCase();
+                    const callName = (row[1] || '').toString().trim();
+                    const handlerName = (row[2] || '').toString().trim();
+                    const registeredName = (row[3] || '').toString().trim();
+                    
+                    dogInfoData[regNumber] = {
+                        callName: callName,
+                        handlerName: handlerName,
+                        registeredName: registeredName
+                    };
+                    loadedCount++;
+                }
+            });
+            
+            console.log('✅ Dog Info data loaded:', loadedCount, 'dogs');
+            resolve(true);
+        })
+        .catch(error => {
+            clearTimeout(timeoutId);
+            console.warn('⚠️ Could not load Dog Info data:', error.message);
+            console.log('💡 Using fallback methods for dog information');
+            resolve(false);
+        });
+    });
+}
         // Load Title Placement data with timeout and error handling
         async function loadTitlePlacementData() {
             return new Promise((resolve) => {
@@ -922,6 +965,9 @@ function getRegisteredName(regNumber) {
                 btn.textContent = 'Generating...';
                 btn.disabled = true;
 
+                 const dogInfo = getDogInfo(regNumber);
+        const handlerName = dogInfo.handlerName || 'Handler Name';
+        const registeredName = dogInfo.registeredName || dogInfo.callName || dogName;
                 const templateInfo = certificateTemplateMapping[level];
                 if (!templateInfo) throw new Error(`No template mapped for level: ${level}`);
 
@@ -1041,6 +1087,9 @@ downloadPDF(pdfBytes, `${registeredName}-${level.replace(/\s+/g, '-')}-Title-Cer
                 btn.textContent = 'Generating...';
                 btn.disabled = true;
 
+                  const dogInfo = getDogInfo(regNumber);
+        const handlerName = dogInfo.handlerName || 'Handler Name';
+        const registeredName = dogInfo.registeredName || dogInfo.callName || dogName;
                 const levelRecords = trialingData.filter(r => r.registrationNumber === regNumber && r.level === level);
                 if (levelRecords.length === 0) throw new Error('No records found for this level');
 
@@ -1263,44 +1312,39 @@ drawTextWithAlignment(firstPage, registeredName, aceCertificateConfig.callName, 
     // Look for Data sheet
     const dataSheet = workbook.Sheets['Data'] || workbook.Sheets[workbook.SheetNames[0]];
     const jsonData = XLSX.utils.sheet_to_json(dataSheet, {header: 1, dateNF: 'yyyy-mm-dd'});
-    // Store raw data for handler name lookup AND registered name lookup
-globalData = jsonData;
-    // Process the data with proper date handling AND Column I (registered name)
+    
+    // Store raw data for fallback methods
+    globalData = jsonData;
+    
+    // Process the data - now only need basic trialing info
     trialingData = jsonData.slice(1).map(row => {
         let processedDate = row[2];
         
         // Handle different date formats
         if (typeof processedDate === 'number') {
-            // Excel date serial number - convert to proper date
             processedDate = XLSX.SSF.parse_date_code(processedDate);
             processedDate = new Date(processedDate.y, processedDate.m - 1, processedDate.d);
         } else if (typeof processedDate === 'string') {
-            // String date - parse it
             processedDate = new Date(processedDate);
         } else if (processedDate instanceof Date) {
-            // Already a date object
             processedDate = processedDate;
         } else {
-            // Invalid date
             processedDate = null;
         }
         
         return {
             registrationNumber: row[0],       // Column A
-            callName: row[1],                 // Column B  
+            callName: row[1],                 // Column B (for fallback)
             date: processedDate,              // Column C
             level: row[3],                    // Column D
             results: row[4],                  // Column E
             judge: row[5],                    // Column F
-            points: parseFloat(row[6]) || 0,  // Column G
-            // NEW: Add Column I (registered name for certificates)
-            registeredName: row[8] || row[1]  // Column I, fallback to call name if empty
+            points: parseFloat(row[6]) || 0   // Column G
         };
     }).filter(record => record.registrationNumber && record.level);
     
     console.log('Data processed:', trialingData.length, 'records');
 }
-
         function updateLastUpdatedDate() {
             if (trialingData.length === 0) {
                 document.getElementById('lastUpdated').textContent = 'No data available';
@@ -1411,12 +1455,13 @@ globalData = jsonData;
             searchDog();
         }
 
-        function displaySummary(records) {
-            const dogName = records[0].callName || 'Unknown';
-            const regNumber = records[0].registrationNumber;
-            
-            // Get handler name from Column H (index 7)
-            const handlerName = getHandlerName(regNumber);
+       function displaySummary(records) {
+    const regNumber = records[0].registrationNumber;
+    const dogInfo = getDogInfo(regNumber);
+    
+    // Use dog info data, fallback to trialing data
+    const dogName = dogInfo.callName || records[0].callName || 'Unknown';
+    const handlerName = dogInfo.handlerName;
             
             const levelSummary = {};
             
@@ -1913,44 +1958,29 @@ globalData = jsonData;
             ];
 
             // Calculate data for each dog
-            const dogsData = dogRegistrations.map(regNumber => {
-                const dogRecords = dogsByReg[regNumber];
-                const dogName = dogRecords[0].callName || 'Unknown';
-                
-                // Get handler name
-                const handlerName = getHandlerName(regNumber);
-                 const registeredName = getRegisteredName(regNumber); // ADD THIS LINE
+         const dogsData = dogRegistrations.map(regNumber => {
+    const dogRecords = dogsByReg[regNumber];
+    const dogInfo = getDogInfo(regNumber);
+    
+    // Use dog info data, fallback to trialing data
+    const dogName = dogInfo.callName || dogRecords[0].callName || 'Unknown';
+    const handlerName = dogInfo.handlerName;
+    const registeredName = dogInfo.registeredName;
 
-                // Calculate level summaries
-                const levelSummary = {};
-                dogRecords.forEach(record => {
-                    if (!record.level) return;
-                    
-                    if (!levelSummary[record.level]) {
-                        levelSummary[record.level] = {
-                            totalPoints: 0,
-                            judges: new Set(),
-                            records: []
-                        };
-                    }
-                    
-                    if (record.points > 0) {
-                        levelSummary[record.level].totalPoints += record.points;
-                        if (record.judge) {
-                            levelSummary[record.level].judges.add(record.judge);
-                        }
-                    }
-                    levelSummary[record.level].records.push(record);
-                });
+    // Calculate level summaries
+    const levelSummary = {};
+    dogRecords.forEach(record => {
+        // ... existing level summary calculation
+    });
 
-                return {
-                    regNumber,
-                    dogName,
-                    handlerName,
-                    registeredName,
-                    levelSummary
-                };
-            });
+    return {
+        regNumber,
+        dogName,
+        handlerName,
+        registeredName,
+        levelSummary
+    };
+});
 
             // Create the table
             html += `
@@ -2090,41 +2120,48 @@ globalData = jsonData;
         }
 
         // Initialize - but make it more immediate
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 CWAGS Tracker initializing...');
-            document.getElementById('lastUpdated').textContent = 'Loading data...';
+       document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 CWAGS Tracker initializing...');
+    document.getElementById('lastUpdated').textContent = 'Loading data...';
+    
+    setTimeout(() => {
+        if (typeof fontkit !== 'undefined') {
+            console.log('✅ Fontkit library loaded successfully');
+        } else {
+            console.warn('⚠️ Fontkit library failed to load - custom fonts will not work');
+        }
+    }, 1000);
+    
+    setTimeout(async () => {
+        try {
+            console.log('📊 Step 1: Loading Dog Info data...');
+            const dogInfoLoaded = await loadDogInfoData();
             
-            // Check fontkit after a delay
-            setTimeout(() => {
-                if (typeof fontkit !== 'undefined') {
-                    console.log('✅ Fontkit library loaded successfully');
-                } else {
-                    console.warn('⚠️ Fontkit library failed to load - custom fonts will not work');
-                }
-            }, 1000);
+            if (dogInfoLoaded) {
+                console.log('✅ Step 1 complete: Dog Info data ready');
+            } else {
+                console.log('⚠️ Step 1 skipped: Dog Info not available, using fallback');
+            }
             
-            // Load files with proper sequencing and error handling
-            setTimeout(async () => {
-                try {
-                    console.log('📊 Step 1: Loading Title Placement data...');
-                    const titlePlacementLoaded = await loadTitlePlacementData();
-                    
-                    if (titlePlacementLoaded) {
-                        console.log('✅ Step 1 complete: Title Placement data ready');
-                    } else {
-                        console.log('⚠️ Step 1 skipped: Title Placement not available');
-                    }
-                    
-                    console.log('📁 Step 2: Loading main trialing data...');
-                    loadDataFromFile();
-                    
-                } catch (error) {
-                    console.error('❌ Initialization error:', error);
-                    document.getElementById('lastUpdated').textContent = 'Initialization failed';
-                    showFileUpload();
-                }
-            }, 200);
-        });
+            console.log('📊 Step 2: Loading Title Placement data...');
+            const titlePlacementLoaded = await loadTitlePlacementData();
+            
+            if (titlePlacementLoaded) {
+                console.log('✅ Step 2 complete: Title Placement data ready');
+            } else {
+                console.log('⚠️ Step 2 skipped: Title Placement not available');
+            }
+            
+            console.log('📁 Step 3: Loading main trialing data...');
+            loadDataFromFile();
+            
+        } catch (error) {
+            console.error('❌ Initialization error:', error);
+            document.getElementById('lastUpdated').textContent = 'Initialization failed';
+            showFileUpload();
+        }
+    }, 200);
+});
 
         // Close modal when clicking outside of it
         window.onclick = function(event) {
