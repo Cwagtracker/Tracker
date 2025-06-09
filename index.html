@@ -765,13 +765,7 @@
                 return dogInfoData[searchRegNumber];
             }
             
-            // Fallback to original method if dog info sheet not available
-            const handlerName = getHandlerNameFallback(regNumber);
-            return {
-                callName: '',
-                handlerName: handlerName,
-                registeredName: ''
-            };
+            return { callName: '', handlerName: '', registeredName: '' };
         }
 
         // Keep the old function as fallback
