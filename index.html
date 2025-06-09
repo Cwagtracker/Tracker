@@ -788,6 +788,37 @@
             return ''; // No match found
         }
 
+        // NEW: Helper function to get registered name from Column I for certificates
+function getRegisteredName(regNumber) {
+    if (!globalData || globalData.length <= 1 || !regNumber) return '';
+    
+    const searchRegNumber = regNumber.toString().trim().toLowerCase();
+    
+    // Search through all data rows (skip header row)
+    for (let i = 1; i < globalData.length; i++) {
+        const row = globalData[i];
+        if (!row || !row[0]) continue; // Skip empty rows
+        
+        const rowRegNumber = row[0].toString().trim().toLowerCase();
+        
+        // Try exact match first
+        if (rowRegNumber === searchRegNumber) {
+            // Return Column I (index 8) if available, fallback to call name (Column B, index 1)
+            return row[8] ? row[8].toString().trim() : (row[1] ? row[1].toString().trim() : '');
+        }
+        
+        // Try normalized match (remove spaces, dashes)
+        const normalizedSearch = searchRegNumber.replace(/[-\s]/g, '');
+        const normalizedRow = rowRegNumber.replace(/[-\s]/g, '');
+        
+        if (normalizedRow === normalizedSearch) {
+            // Return Column I (index 8) if available, fallback to call name (Column B, index 1)
+            return row[8] ? row[8].toString().trim() : (row[1] ? row[1].toString().trim() : '');
+        }
+    }
+    
+    return ''; // No match found
+}
         function getSortedLevels(levelSummary) {
             const availableLevels = Object.keys(levelSummary);
             const orderedLevels = levelOrder.filter(level => availableLevels.includes(level));
@@ -953,10 +984,13 @@
                     color: PDFLib.rgb(0, 0, 0)
                 });
 
-                const dogConfig = titleCertificateConfig.dogName;
-                const dogTextWidth = maiandraFont.widthOfTextAtSize(dogName, dogConfig.size);
-                const dogX = dogConfig.x - (dogTextWidth / 2);
-                firstPage.drawText(dogName, {
+               // Get registered name from Column I for the certificate
+const registeredName = getRegisteredName(regNumber) || dogName;
+
+const dogConfig = titleCertificateConfig.dogName;
+const dogTextWidth = maiandraFont.widthOfTextAtSize(registeredName, dogConfig.size);
+const dogX = dogConfig.x - (dogTextWidth / 2);
+firstPage.drawText(registeredName, {
                     x: dogX, y: dogConfig.y, size: dogConfig.size, font: maiandraFont,
                     color: PDFLib.rgb(0, 0, 0)
                 });
@@ -985,8 +1019,8 @@
                 });
 
                 const pdfBytes = await pdfDoc.save();
-                downloadPDF(pdfBytes, `${dogName}-${level.replace(/\s+/g, '-')}-Title-Certificate.pdf`);
-
+                
+downloadPDF(pdfBytes, `${registeredName}-${level.replace(/\s+/g, '-')}-Title-Certificate.pdf`);
                 btn.textContent = '📜 Title Certificate';
                 btn.disabled = false;
 
@@ -1073,13 +1107,15 @@
                 const dateLineText = `This certifies that on ${dateEarned} the requirements have been met for the title of:`;
                 drawTextWithAlignment(firstPage, dateLineText, aceCertificateConfig.dateLine, helvetica);
 
-                drawTextWithAlignment(firstPage, aceCertificateName, aceCertificateConfig.levelAbbreviation, maiandraFont);
+                // Get registered name from Column I for the certificate
+const registeredName = getRegisteredName(regNumber) || dogName;
+drawTextWithAlignment(firstPage, registeredName, aceCertificateConfig.callName, maiandraFont);
                 drawTextWithAlignment(firstPage, dogName, aceCertificateConfig.callName, maiandraFont);
                 drawTextWithAlignment(firstPage, handlerName, aceCertificateConfig.handlerName, maiandraFont);
                 drawTextWithAlignment(firstPage, regNumber, aceCertificateConfig.registrationNumber, helvetica);
 
                 const pdfBytes = await pdfDoc.save();
-                downloadPDF(pdfBytes, `${dogName}-${level.replace(/\s+/g, '-')}-ACE-Certificate.pdf`);
+                downloadPDF(pdfBytes, `${registeredName}-${level.replace(/\s+/g, '-')}-ACE-Certificate.pdf`);
 
                 btn.textContent = '🏆 Ace Certificate';
                 btn.disabled = false;
@@ -1221,49 +1257,48 @@
             reader.readAsArrayBuffer(file);
         }
 
-        function processExcelData(data) {
-            const workbook = XLSX.read(data, {type: 'array', cellDates: true});
-            
-            // Look for Data sheet
-            const dataSheet = workbook.Sheets['Data'] || workbook.Sheets[workbook.SheetNames[0]];
-            const jsonData = XLSX.utils.sheet_to_json(dataSheet, {header: 1, dateNF: 'yyyy-mm-dd'});
-            
-            // Store raw data for handler name lookup
-            globalData = jsonData;
-            
-            // Process the data with proper date handling
-            trialingData = jsonData.slice(1).map(row => {
-                let processedDate = row[2];
-                
-                // Handle different date formats
-                if (typeof processedDate === 'number') {
-                    // Excel date serial number - convert to proper date
-                    processedDate = XLSX.SSF.parse_date_code(processedDate);
-                    processedDate = new Date(processedDate.y, processedDate.m - 1, processedDate.d);
-                } else if (typeof processedDate === 'string') {
-                    // String date - parse it
-                    processedDate = new Date(processedDate);
-                } else if (processedDate instanceof Date) {
-                    // Already a date object
-                    processedDate = processedDate;
-                } else {
-                    // Invalid date
-                    processedDate = null;
-                }
-                
-                return {
-                    registrationNumber: row[0],
-                    callName: row[1],
-                    date: processedDate,
-                    level: row[3],
-                    results: row[4],
-                    judge: row[5],
-                    points: parseFloat(row[6]) || 0
-                };
-            }).filter(record => record.registrationNumber && record.level);
-            
-            console.log('Data processed:', trialingData.length, 'records');
+    function processExcelData(data) {
+    const workbook = XLSX.read(data, {type: 'array', cellDates: true});
+    
+    // Look for Data sheet
+    const dataSheet = workbook.Sheets['Data'] || workbook.Sheets[workbook.SheetNames[0]];
+    const jsonData = XLSX.utils.sheet_to_json(dataSheet, {header: 1, dateNF: 'yyyy-mm-dd'});
+    
+    // Process the data with proper date handling AND Column I (registered name)
+    trialingData = jsonData.slice(1).map(row => {
+        let processedDate = row[2];
+        
+        // Handle different date formats
+        if (typeof processedDate === 'number') {
+            // Excel date serial number - convert to proper date
+            processedDate = XLSX.SSF.parse_date_code(processedDate);
+            processedDate = new Date(processedDate.y, processedDate.m - 1, processedDate.d);
+        } else if (typeof processedDate === 'string') {
+            // String date - parse it
+            processedDate = new Date(processedDate);
+        } else if (processedDate instanceof Date) {
+            // Already a date object
+            processedDate = processedDate;
+        } else {
+            // Invalid date
+            processedDate = null;
         }
+        
+        return {
+            registrationNumber: row[0],       // Column A
+            callName: row[1],                 // Column B  
+            date: processedDate,              // Column C
+            level: row[3],                    // Column D
+            results: row[4],                  // Column E
+            judge: row[5],                    // Column F
+            points: parseFloat(row[6]) || 0,  // Column G
+            // NEW: Add Column I (registered name for certificates)
+            registeredName: row[8] || row[1]  // Column I, fallback to call name if empty
+        };
+    }).filter(record => record.registrationNumber && record.level);
+    
+    console.log('Data processed:', trialingData.length, 'records');
+}
 
         function updateLastUpdatedDate() {
             if (trialingData.length === 0) {
