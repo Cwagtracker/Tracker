@@ -1851,6 +1851,18 @@
                         🖨️ Print View
                     </button>
                 </div>
+
+                <div class="legend-print" style="margin-bottom: 15px; padding: 15px; background: #e7f3ff; border: 1px solid #b8daff; border-radius: 8px;">
+                    <h4 style="color: #004085; margin-bottom: 10px;">Legend:</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; font-size: 0.9rem; color: #004085;">
+                        <div><span style="background: #d4edda; padding: 2px 6px; border-radius: 3px; margin-right: 8px;"><strong>Title!</strong></span> - Title earned</div>
+                        <div><span style="background: #d4edda; padding: 2px 6px; border-radius: 3px; margin-right: 8px;"><strong>Ace2</strong></span> - Has earned Ace2</div>
+                        <div><span style="background: linear-gradient(135deg, #e8f5e8, #d4edda); padding: 2px 6px; border-radius: 3px; margin-right: 8px;"><strong>3 → Ace</strong></span> - Needs 3 Q's for first Ace</div>
+                        <div><span style="background: linear-gradient(135deg, #e8f5e8, #d4edda); padding: 2px 6px; border-radius: 3px; margin-right: 8px;"><strong>7 → Ace3</strong></span> - Needs 7 Q's for next Ace level</div>
+                        <div><span style="background: #fff3cd; padding: 2px 6px; border-radius: 3px; margin-right: 8px;"><strong>3 Q's, 1 judge needed for title</strong></span> - Requirements to achieve Title</div>
+                        <div><span style="color: #666; margin-right: 8px;"><strong>-</strong></span> - No entries at this level</div>
+                    </div>
+                </div>
             `;
 
             // Define all levels in proper order
@@ -1967,7 +1979,7 @@
                                     cellContent = `<strong style="color: #6f42c1;">Ace${aceCount}</strong>`;
                                 } else {
                                     // Show Q's needed to next ACE
-                                    cellContent = `<strong style="color: #6f42c1;">${pointsToNextAce} to Ace${nextAceNumber}</strong>`;
+                                    cellContent = `<strong style="color: #6f42c1;">${pointsToNextAce} → Ace${nextAceNumber}</strong>`;
                                 }
                                 cellStyle += ' background: linear-gradient(135deg, #e8f5e8, #d4edda);';
                             } else {
@@ -1976,7 +1988,7 @@
                                 if (acePoints === 0) {
                                     cellContent = `<strong style="color: #155724;">Title!</strong>`;
                                 } else {
-                                    cellContent = `<strong style="color: #155724;">${pointsToFirstAce} to Ace</strong>`;
+                                    cellContent = `<strong style="color: #155724;">${pointsToFirstAce} → Ace</strong>`;
                                 }
                                 cellStyle += ' background: #d4edda;';
                             }
@@ -1985,7 +1997,7 @@
                             if (totalPoints < 4) needMore.push(`${4 - totalPoints} Q's`);
                             if (judgeCount < 2) needMore.push(`${2 - judgeCount} judge${judgeCount === 0 ? 's' : ''}`);
                             
-                            cellContent = `<span style="color: #856404;">${needMore.join(', ')}</span>`;
+                            cellContent = `<span style="color: #856404;">${needMore.join(', ')} needed for title</span>`;
                             cellStyle += ' background: #fff3cd;';
                         }
                     }
@@ -1999,18 +2011,6 @@
             html += `
                         </tbody>
                     </table>
-                </div>
-
-                <div class="legend-print" style="margin-top: 20px; padding: 15px; background: #e7f3ff; border: 1px solid #b8daff; border-radius: 8px;">
-                    <h4 style="color: #004085; margin-bottom: 10px;">Legend:</h4>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; font-size: 0.9rem; color: #004085;">
-                        <div><span style="background: #d4edda; padding: 2px 6px; border-radius: 3px; margin-right: 8px;"><strong>Title!</strong></span> - Title earned</div>
-                        <div><span style="background: #d4edda; padding: 2px 6px; border-radius: 3px; margin-right: 8px;"><strong>Ace2</strong></span> - Has earned Ace2</div>
-                        <div><span style="background: linear-gradient(135deg, #e8f5e8, #d4edda); padding: 2px 6px; border-radius: 3px; margin-right: 8px;"><strong>3 to Ace</strong></span> - Needs 3 Q's for first Ace</div>
-                        <div><span style="background: linear-gradient(135deg, #e8f5e8, #d4edda); padding: 2px 6px; border-radius: 3px; margin-right: 8px;"><strong>7 to Ace3</strong></span> - Needs 7 Q's for next Ace level</div>
-                        <div><span style="background: #fff3cd; padding: 2px 6px; border-radius: 3px; margin-right: 8px;"><strong>2 Q's, 1 judge</strong></span> - What's needed to achieve Title</div>
-                        <div><span style="color: #666; margin-right: 8px;"><strong>-</strong></span> - No entries at this level</div>
-                    </div>
                 </div>
 
                 <div style="text-align: center; margin-top: 30px;">
