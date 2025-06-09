@@ -1,4 +1,9 @@
-<!DOCTYPE html>
+function getSortedLevels(levelSummary) {
+            const availableLevels = Object.keys(levelSummary);
+            const orderedLevels = levelOrder.filter(level => availableLevels.includes(level));
+            const unorderedLevels = availableLevels.filter(level => !levelOrder.includes(level));
+            return [...orderedLevels, ...unorderedLevels.sort()];
+        }<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -758,11 +763,34 @@
                 .replace(/\r/g, "\\r");
         }
 
-        function getSortedLevels(levelSummary) {
-            const availableLevels = Object.keys(levelSummary);
-            const orderedLevels = levelOrder.filter(level => availableLevels.includes(level));
-            const unorderedLevels = availableLevels.filter(level => !levelOrder.includes(level));
-            return [...orderedLevels, ...unorderedLevels.sort()];
+        // Helper function to get handler name with robust matching
+        function getHandlerName(regNumber) {
+            if (!globalData || globalData.length <= 1 || !regNumber) return '';
+            
+            const searchRegNumber = regNumber.toString().trim().toLowerCase();
+            
+            // Search through all data rows (skip header row)
+            for (let i = 1; i < globalData.length; i++) {
+                const row = globalData[i];
+                if (!row || !row[0]) continue; // Skip empty rows
+                
+                const rowRegNumber = row[0].toString().trim().toLowerCase();
+                
+                // Try exact match first
+                if (rowRegNumber === searchRegNumber) {
+                    return row[7] ? row[7].toString().trim() : '';
+                }
+                
+                // Try normalized match (remove spaces, dashes)
+                const normalizedSearch = searchRegNumber.replace(/[-\s]/g, '');
+                const normalizedRow = rowRegNumber.replace(/[-\s]/g, '');
+                
+                if (normalizedRow === normalizedSearch) {
+                    return row[7] ? row[7].toString().trim() : '';
+                }
+            }
+            
+            return ''; // No match found
         }
 
         // Load Title Placement data with timeout and error handling
@@ -906,15 +934,7 @@
                 }
 
                 // Get handler name
-                let handlerName = 'Handler Name';
-                if (globalData && globalData.length > 1) {
-                    const dogData = globalData.slice(1).find(row => 
-                        row && row[0] && row[0].toString().trim() === regNumber.toString().trim()
-                    );
-                    if (dogData && dogData[7]) {
-                        handlerName = dogData[7].toString().trim();
-                    }
-                }
+                const handlerName = getHandlerName(regNumber);
 
                 // Add text to certificate
                 const regConfig = titleCertificateConfig.registrationNumber;
@@ -1028,15 +1048,8 @@
                 }
 
                 // Get handler name
-                let handlerName = 'Handler Name';
-                if (globalData && globalData.length > 1) {
-                    const dogData = globalData.slice(1).find(row => 
-                        row && row[0] && row[0].toString().trim() === regNumber.toString().trim()
-                    );
-                    if (dogData && dogData[7]) {
-                        handlerName = dogData[7].toString().trim();
-                    }
-                }
+                let handlerName = getHandlerName(regNumber);
+                if (!handlerName) handlerName = 'Handler Name'; // Fallback for certificates
 
                 // Helper function for text alignment
                 function drawTextWithAlignment(page, text, config, font) {
@@ -1365,15 +1378,7 @@
             const regNumber = records[0].registrationNumber;
             
             // Get handler name from Column H (index 7)
-            let handlerName = '';
-            if (globalData && globalData.length > 1) {
-                const dogData = globalData.slice(1).find(row => 
-                    row && row[0] && row[0].toString().trim() === regNumber.toString().trim()
-                );
-                if (dogData && dogData[7]) {
-                    handlerName = dogData[7].toString().trim();
-                }
-            }
+            const handlerName = getHandlerName(regNumber);
             
             const levelSummary = {};
             
@@ -1863,15 +1868,7 @@
                 const dogName = dogRecords[0].callName || 'Unknown';
                 
                 // Get handler name
-                let handlerName = '';
-                if (globalData && globalData.length > 1) {
-                    const dogData = globalData.slice(1).find(row => 
-                        row && row[0] && row[0].toString().trim() === regNumber.toString().trim()
-                    );
-                    if (dogData && dogData[7]) {
-                        handlerName = dogData[7].toString().trim();
-                    }
-                }
+                const handlerName = getHandlerName(regNumber);
 
                 // Calculate level summaries
                 const levelSummary = {};
