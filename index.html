@@ -798,11 +798,11 @@
                     let loadedCount = 0;
                     // Process DogInfo data - skip header row
                     jsonData.slice(1).forEach(row => {
-                        if (row && row[0]) { // Column A is Registration Number
+                       if (row && row[0]) { // Column A is Registration Number
                             const regNumber = row[0].toString().trim();
                             const callName = row[1] ? row[1].toString().trim() : '';
-                            const handlerName = row[2] ? row[2].toString().trim() : '';
-                            const registeredName = row[3] ? row[3].toString().trim() : '';
+                            const registeredName = row[2] ? row[2].toString().trim() : '';  // Column C
+                            const handlerName = row[3] ? row[3].toString().trim() : '';     // Column D
                             
                             dogInfoData[regNumber] = {
                                 callName: callName,
