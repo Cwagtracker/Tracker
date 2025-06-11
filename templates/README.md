@@ -1,1 +1,0 @@
-"Certificate templates folder"
