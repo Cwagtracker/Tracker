@@ -1132,6 +1132,7 @@
                 drawTextWithAlignment(firstPage, registeredName, aceCertificateConfig.callName, maiandraFont);
                 drawTextWithAlignment(firstPage, handlerName, aceCertificateConfig.handlerName, maiandraFont);
                 drawTextWithAlignment(firstPage, regNumber, aceCertificateConfig.registrationNumber, helvetica);
+                drawTextWithAlignment(firstPage, aceCertificateName, aceCertificateConfig.levelAbbreviation, maiandraFont);
 
                 const pdfBytes = await pdfDoc.save();
                 downloadPDF(pdfBytes, `${registeredName}-${level.replace(/\s+/g, '-')}-ACE-Certificate.pdf`);
