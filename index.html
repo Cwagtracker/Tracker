@@ -1069,38 +1069,21 @@ async function generateAceCertificate(level, regNumber, aceCount) {
         const titleInfo = calculateTitlePoints(levelRecords);
         const titlePoints = titleInfo.titlePoints;
 
-        // Find when the specific ACE was earned
-        function findSpecificAceEarnedDate(records, titlePoints, targetAceCount) {
-            const sortedRecords = records
-                .filter(r => r.points > 0 && r.date instanceof Date && !isNaN(r.date))
-                .sort((a, b) => a.date - b.date);
-            
-            let cumulativePoints = 0;
-            
-            for (const record of sortedRecords) {
-                const prevPoints = cumulativePoints;
-                cumulativePoints += record.points;
-                
-                // Check for ace milestones after title was earned
-                if (prevPoints >= titlePoints && cumulativePoints > titlePoints) {
-                    const prevAcePoints = prevPoints - titlePoints;
-                    const newAcePoints = cumulativePoints - titlePoints;
-                    
-                    const prevAceCount = Math.floor(prevAcePoints / 10);
-                    const newAceCount = Math.floor(newAcePoints / 10);
-                    
-                    // If this record earned the target ACE count
-                    if (prevAceCount < targetAceCount && newAceCount >= targetAceCount) {
-                        return record.date;
-                    }
-                }
+        // Find when the specific ACE was earned by using existing function
+        const aceEarnedDates = findAceEarnedDates(levelRecords, titlePoints);
+        let aceEarnedDate = titleInfo.titleDate; // fallback to title date
+
+        // Find the date for the specific ACE count we're generating
+        if (aceEarnedDates.length > 0) {
+            const targetAce = aceEarnedDates.find(ace => ace.aceNumber === aceCount);
+            if (targetAce) {
+                aceEarnedDate = targetAce.date;
+            } else {
+                // If exact ACE not found, use the last ACE date available
+                aceEarnedDate = aceEarnedDates[aceEarnedDates.length - 1].date;
             }
-            
-            // Fallback to title date if not found
-            return titleInfo.titleDate;
         }
 
-        const aceEarnedDate = findSpecificAceEarnedDate(levelRecords, titlePoints, aceCount);
         const dateEarned = aceEarnedDate ? aceEarnedDate.toLocaleDateString() : new Date().toLocaleDateString();
         const aceCertificateName = getAceCertificateName(level, aceCount);
 
