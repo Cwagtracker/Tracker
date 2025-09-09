@@ -1905,27 +1905,32 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
                 return;
             }
 
-            document.getElementById('summaryContent').innerHTML = `
-                <div style="text-align: center; padding: 40px;">
-                    <h3 style="color: #17a2b8; margin-bottom: 20px;">👤 Owner View</h3>
-                    <p style="margin-bottom: 20px;">Enter the middle 4 digits from your registration number:</p>
-                    
-                    <div style="background: #f8f9fa; padding: 30px; border-radius: 12px; border: 2px solid #dee2e6; margin: 20px 0;">
-                        <input type="text" id="ownerIdInput" placeholder="e.g., 1734" 
-                               style="padding: 15px 20px; font-size: 1.2rem; border: 2px solid #ddd; border-radius: 10px; width: 200px; text-align: center;"
-                               onkeypress="handleOwnerKeyPress(event)" maxlength="4">
-                        <br><br>
-                        <button onclick="loadOwnerView()" style="background: #28a745; color: white; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; font-size: 1.1rem;">
-                            📊 Load Owner View
-                        </button>
-                    </div>
-                    
-                    <button onclick="backToSearch()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
-                        ← Back to Search
-                    </button>
-                </div>
-            `;
-        }
+        document.getElementById('summaryContent').innerHTML = `
+    <div style="text-align: center; padding: 40px 20px;"> <!-- Added horizontal padding for mobile -->
+        <h3 style="color: #17a2b8; margin-bottom: 20px;">👤 Owner View</h3>
+        <p style="margin-bottom: 20px;">Enter the middle 4 digits from your registration number:</p>
+        
+        <div style="background: #f8f9fa; padding: 30px 20px; border-radius: 12px; border: 2px solid #dee2e6; margin: 20px auto; max-width: 400px;"> <!-- Added max-width and auto margin -->
+            <input type="text" id="ownerIdInput" placeholder="e.g., 1734" 
+                   style="padding: 15px 20px; font-size: 1.2rem; border: 2px solid #ddd; border-radius: 10px; width: 100%; max-width: 200px; text-align: center; box-sizing: border-box;"
+                   onkeypress="handleOwnerKeyPress(event)" maxlength="4">
+            <br><br>
+            <button onclick="loadOwnerView()" style="background: #28a745; color: white; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; font-size: 1.1rem; width: 100%; max-width: 250px;">
+                📊 Load Owner View
+            </button>
+        </div>
+        
+        <button onclick="backToSearch()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+            ← Back to Search
+        </button>
+    </div>
+`;
+
+function handleOwnerKeyPress(event) {
+    if (event.key === 'Enter') {
+        loadOwnerView();
+    }
+}
 
         function handleOwnerKeyPress(event) {
             if (event.key === 'Enter') {
@@ -2262,6 +2267,7 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
     </script>
 </body>
 </html>
+
 
 
 
