@@ -423,131 +423,115 @@
             font-size: 1.1rem;
         }
 
-        /* Print Styles */
-        @media print {
-            body {
-                background: white !important;
-                padding: 5px !important;
-                margin: 0 !important;
-                font-size: 10px !important;
-            }
-            
-            .container {
-                box-shadow: none !important;
-                border-radius: 0 !important;
-                max-width: none !important;
-                width: 100% !important;
-                margin: 0 !important;
-            }
-            
-            .header {
-                background: #2c3e50 !important;
-                color: white !important;
-                padding: 10px !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            
-            .logo {
-                width: 50px !important;
-                height: 50px !important;
-            }
-            
-            .header h1 {
-                font-size: 1.2rem !important;
-                margin-bottom: 3px !important;
-            }
-            
-            .header p {
-                font-size: 0.7rem !important;
-                margin-bottom: 2px !important;
-            }
-            
-            .last-updated {
-                font-size: 0.6rem !important;
-            }
-            
-            /* Hide buttons and non-essential elements */
-            button, .search-section {
-                display: none !important;
-            }
-            
-            /* Owner view table print optimization */
-            .owner-view-table {
-                font-size: 8px !important;
-                width: 100% !important;
-                page-break-inside: avoid !important;
-                border-collapse: collapse !important;
-            }
-            
-            .owner-view-table th {
-                padding: 2px 1px !important;
-                font-size: 7px !important;
-                font-weight: bold !important;
-                background: #f8f9fa !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                border: 1px solid #ccc !important;
-            }
-            
-            .owner-view-table td {
-                padding: 2px 1px !important;
-                font-size: 7px !important;
-                text-align: center !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                border: 1px solid #ccc !important;
-            }
-            
-            /* Preserve background colors in print */
-            .owner-view-table td[style*="background: #d4edda"] {
-                background: #d4edda !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            
-            .owner-view-table td[style*="background: #fff3cd"] {
-                background: #fff3cd !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            
-            .owner-view-table td[style*="background: linear-gradient"] {
-                background: #e8f5e8 !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            
-            /* Adjust margins for print */
-            @page {
-                margin: 0.3in !important;
-                size: portrait !important;
-            }
-            
-            /* Legend print styling */
-            .legend-print {
-                margin-top: 5px !important;
-                padding: 5px !important;
-                font-size: 6px !important;
-                background: #e7f3ff !important;
-                border: 1px solid #b8daff !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                page-break-inside: avoid !important;
-            }
-            
-            .legend-print h4 {
-                font-size: 7px !important;
-                margin-bottom: 3px !important;
-            }
-            
-            .legend-print div {
-                display: inline-block !important;
-                margin-right: 8px !important;
-                margin-bottom: 2px !important;
-                font-size: 6px !important;
-            }
-        }
+       /* Add these rules to your existing @media print section */
+
+@media print {
+    /* Keep existing body and container styles */
+    body {
+        background: white !important;
+        padding: 5px !important;
+        margin: 0 !important;
+        font-size: 10px !important;
+    }
+    
+    .container {
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        max-width: none !important;
+        width: 100% !important;
+        margin: 0 !important;
+    }
+    
+    .header {
+        background: #2c3e50 !important;
+        color: white !important;
+        padding: 10px !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    .logo {
+        width: 50px !important;
+        height: 50px !important;
+    }
+    
+    .header h1 {
+        font-size: 1.2rem !important;
+        margin-bottom: 3px !important;
+    }
+    
+    .header p {
+        font-size: 0.7rem !important;
+        margin-bottom: 2px !important;
+    }
+    
+    .last-updated {
+        font-size: 0.6rem !important;
+    }
+    
+    /* Hide ALL buttons, search section, legend, and middle content */
+    button, 
+    .search-section,
+    .legend-print,
+    div[style*="background: linear-gradient(45deg, #667eea, #764ba2)"], /* Hide the blue gradient header in owner view */
+    div[style*="text-align: center; margin-bottom: 15px;"], /* Hide button container */
+    div[style*="text-align: center; margin-top: 30px;"] /* Hide bottom button container */ {
+        display: none !important;
+    }
+    
+    /* Owner view table print optimization */
+    .owner-view-table {
+        font-size: 8px !important;
+        width: 100% !important;
+        page-break-inside: avoid !important;
+        border-collapse: collapse !important;
+        margin-top: 10px !important; /* Add some space after header */
+    }
+    
+    .owner-view-table th {
+        padding: 2px 1px !important;
+        font-size: 7px !important;
+        font-weight: bold !important;
+        background: #f8f9fa !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        border: 1px solid #ccc !important;
+    }
+    
+    .owner-view-table td {
+        padding: 2px 1px !important;
+        font-size: 7px !important;
+        text-align: center !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        border: 1px solid #ccc !important;
+    }
+    
+    /* Preserve background colors in print */
+    .owner-view-table td[style*="background: #d4edda"] {
+        background: #d4edda !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    .owner-view-table td[style*="background: #fff3cd"] {
+        background: #fff3cd !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    .owner-view-table td[style*="background: linear-gradient"] {
+        background: #e8f5e8 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    /* Adjust margins for print */
+    @page {
+        margin: 0.3in !important;
+        size: portrait !important;
+    }
+}
     </style>
 </head>
 <body>
@@ -2278,6 +2262,7 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
     </script>
 </body>
 </html>
+
 
 
 
