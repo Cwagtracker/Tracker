@@ -226,12 +226,12 @@
             border: 1px solid #f5c6cb;
         }
 
-        .Q's-breakdown {
+        .Qs-breakdown {
             font-size: 0.9rem;
             margin: 8px 0;
         }
 
-        .Q's-breakdown div {
+        .Qs-breakdown div {
             margin: 4px 0;
             display: flex;
             justify-content: space-between;
@@ -315,7 +315,7 @@
             background: #f8f9fa;
         }
 
-        .Q's-badge {
+        .Qs-badge {
             background: #28a745;
             color: white;
             padding: 4px 8px;
@@ -324,7 +324,7 @@
             font-weight: 600;
         }
 
-        .Q's-badge.zero {
+        .Qs-badge.zero {
             background: #dc3545;
         }
 
@@ -557,7 +557,7 @@
                 <div id="leftLogo" class="logo"></div>
                 <div class="header-text">
                     <h1>C-WAGS Tracker</h1>
-                    <p>Track your dog's trialing progress, Q's, and title eligibility</p>
+                    <p>Track your dog's trialing progress, Qs, and title eligibility</p>
                     <div class="last-updated" id="lastUpdated">Loading data...</div>
                 </div>
                 <div id="rightLogo" class="logo"></div>
@@ -576,7 +576,7 @@
 
         <div class="main-content">
             <div class="summary-section">
-                <div class="section-header">Q's Summary & Title Progress</div>
+                <div class="section-header">Qs Summary & Title Progress</div>
                 <div class="section-content" id="summaryContent">
                     <div class="loading-message">
                         Loading trialing data...
@@ -584,12 +584,12 @@
                     <div class="validation-rules">
                         <h4>Title Requirements</h4>
                         <ul>
-                            <li>Minimum 4 Q's required for each level</li>
-                            <li>Q's must come from at least 2 different judges</li>
+                            <li>Minimum 4 Qs required for each level</li>
+                            <li>Qs must come from at least 2 different judges</li>
                             <li>Prerequisites must be met before advancing to higher levels</li>
                             <li>Special case: "Investigator 3" requires either "Patrol 1" OR "Detective 2"</li>
                             <li>Games levels require at least 2 different games (BJ, C, P, T, GB)</li>
-                            <li>Ace awards given every 10 Q's after title is earned</li>
+                            <li>Ace awards given every 10 Qs after title is earned</li>
                         </ul>
                     </div>
                 </div>
@@ -1008,7 +1008,7 @@ function drawTextWithAlignmentAndDynamicSize(page, text, config, font, maxWidth 
                 const levelRecords = trialingData.filter(r => r.registrationNumber === regNumber && r.level === level);
                 if (levelRecords.length === 0) throw new Error('No records found for this level');
 
-                const titleInfo = calculateTitleQ's(levelRecords);
+                const titleInfo = calculateTitleQs(levelRecords);
                 const dateEarned = titleInfo.titleDate ? titleInfo.titleDate.toLocaleDateString() : new Date().toLocaleDateString();
                 const certificateName = getCertificateName(level);
 
@@ -1148,11 +1148,11 @@ async function generateAceCertificate(level, regNumber, aceCount) {
         const levelRecords = trialingData.filter(r => r.registrationNumber === regNumber && r.level === level);
         if (levelRecords.length === 0) throw new Error('No records found for this level');
 
-        const titleInfo = calculateTitleQ's(levelRecords);
-        const titleQ's = titleInfo.titleQ's;
+        const titleInfo = calculateTitleQs(levelRecords);
+        const titleQs = titleInfo.titleQs;
 
         // Find when the specific ACE was earned by using existing function
-        const aceEarnedDates = findAceEarnedDates(levelRecords, titleQ's);
+        const aceEarnedDates = findAceEarnedDates(levelRecords, titleQs);
         let aceEarnedDate = titleInfo.titleDate; // fallback to title date
 
         // Find the date for the specific ACE count we're generating
@@ -1298,12 +1298,12 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
                         <div class="validation-rules">
                             <h4>Title Requirements</h4>
                             <ul>
-                                <li>Minimum 4 Q's required for each level</li>
-                                <li>Q's must come from at least 2 different judges</li>
+                                <li>Minimum 4 Qs required for each level</li>
+                                <li>Qs must come from at least 2 different judges</li>
                                 <li>Prerequisites must be met before advancing to higher levels</li>
                                 <li>Special case: "Investigator 3" requires either "Patrol 1" OR "Detective 2"</li>
                                 <li>Games levels require at least 2 different games (BJ, C, P, T, GB)</li>
-                                <li>Ace awards given every 10 Q's after title is earned</li>
+                                <li>Ace awards given every 10 Qs after title is earned</li>
                             </ul>
                         </div>
                     `;
@@ -1357,12 +1357,12 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
                         <div class="validation-rules">
                             <h4>Title Requirements</h4>
                             <ul>
-                                <li>Minimum 4 Q's required for each level</li>
-                                <li>Q's must come from at least 2 different judges</li>
+                                <li>Minimum 4 Qs required for each level</li>
+                                <li>Qs must come from at least 2 different judges</li>
                                 <li>Prerequisites must be met before advancing to higher levels</li>
                                 <li>Special case: "Investigator 3" requires either "Patrol 1" OR "Detective 2"</li>
                                 <li>Games levels require at least 2 different games (BJ, C, P, T, GB)</li>
-                                <li>Ace awards given every 10 Q's after title is earned</li>
+                                <li>Ace awards given every 10 Qs after title is earned</li>
                             </ul>
                         </div>
                     `;
@@ -1414,7 +1414,7 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
                     level: row[3],                    // Column D
                     results: row[4],                  // Column E
                     judge: row[5],                    // Column F
-                    Q's: parseFloat(row[6]) || 0   // Column G
+                    Qs: parseFloat(row[6]) || 0   // Column G
                 };
             }).filter(record => record.registrationNumber && record.level);
             
@@ -1546,14 +1546,14 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
                 
                 if (!levelSummary[record.level]) {
                     levelSummary[record.level] = {
-                        totalQ's: 0,
+                        totalQs: 0,
                         judges: new Set(),
                         records: []
                     };
                 }
                 
-                if (record.Q's > 0) {
-                    levelSummary[record.level].totalQ's += record.Q's;
+                if (record.Qs > 0) {
+                    levelSummary[record.level].totalQs += record.Qs;
                     if (record.judge) {
                         levelSummary[record.level].judges.add(record.judge);
                     }
@@ -1578,7 +1578,7 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
                 const isValidated = validatedLevels[level];
                 const judgeCount = summary.judges.size;
                 
-                const hasTitleRequirements = summary.totalQ's >= 4 && judgeCount >= 2 && isValidated;
+                const hasTitleRequirements = summary.totalQs >= 4 && judgeCount >= 2 && isValidated;
                 
                 // For Games levels, also check if they have enough different games
                 let gamesInfo = '';
@@ -1587,24 +1587,24 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
                     gamesInfo = `<div><span>Different Games:</span> <strong>${uniqueGames.size}/2</strong> (${Array.from(uniqueGames).join(', ') || 'None'})</div>`;
                 }
                 
-                // Calculate title Q's and ace Q's
-                let titleQ's = 0;
-                let aceQ's = 0;
+                // Calculate title Qs and ace Qs
+                let titleQs = 0;
+                let aceQs = 0;
                 let titleStatus = '';
                 let titleClass = '';
                 let titleInfo = null;
                 
                 if (hasTitleRequirements) {
-                    // Find the point at which title was earned (when both 4 Q's and 2 judges were achieved)
-                    titleInfo = calculateTitleQ's(summary.records);
-                    titleQ's = titleInfo.titleQ's;
+                    // Find the point at which title was earned (when both 4 Qs and 2 judges were achieved)
+                    titleInfo = calculateTitleQs(summary.records);
+                    titleQs = titleInfo.titleQs;
                     const titleDate = titleInfo.titleDate;
-                    aceQ's = Math.max(0, summary.totalQ's - titleQ's);
+                    aceQs = Math.max(0, summary.totalQs - titleQs);
                     
                     const officialTitle = titleAbbreviations[level] || level;
                     
-                    if (aceQ's >= 10) {
-                        const aceCount = Math.floor(aceQ's / 10);
+                    if (aceQs >= 10) {
+                        const aceCount = Math.floor(aceQs / 10);
                         if (aceCount === 1) {
                             titleStatus = `${officialTitle}A`;
                         } else {
@@ -1636,8 +1636,8 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
                     `;
                     
                     // Ace certificate buttons (if applicable) - generate one for each ACE level earned
-                    if (aceQ's >= 10) {
-                        const aceCount = Math.floor(aceQ's / 10);
+                    if (aceQs >= 10) {
+                        const aceCount = Math.floor(aceQs / 10);
                         for (let i = 1; i <= aceCount; i++) {
                             const aceLabel = i === 1 ? 'Ace' : `Ace ${i}`;
                             certificateButtons += `
@@ -1655,16 +1655,16 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
                             <h4>${level}</h4>
                             <div class="title-status ${titleClass}">${titleStatus}</div>
                             
-                            <div class="Q's-breakdown">
-                                <div><span>Total Q's:</span> <strong>${summary.totalQ's}</strong></div>
+                            <div class="Qs-breakdown">
+                                <div><span>Total Qs:</span> <strong>${summary.totalQs}</strong></div>
                                 <div><span>Judges:</span> <strong>${judgeCount}/2</strong></div>
                                 ${gamesInfo}
                                 ${hasTitleRequirements ? `
-                                    <div><span>Q's Towards Title:</span> <strong>${titleQ's}</strong></div>
-                                    <div><span>Q's Towards Ace:</span> <strong class="ace-info">${aceQ's}</strong></div>
+                                    <div><span>Qs Towards Title:</span> <strong>${titleQs}</strong></div>
+                                    <div><span>Qs Towards Ace:</span> <strong class="ace-info">${aceQs}</strong></div>
                                     ${titleInfo && titleInfo.titleDate ? `<div style="color: #28a745; font-size: 0.85rem;"><span>Title Earned:</span> <strong>${titleInfo.titleDate instanceof Date && !isNaN(titleInfo.titleDate) ? titleInfo.titleDate.toLocaleDateString() : 'N/A'}</strong></div>` : ''}
                                    ${(() => {
-    const aceEarnedDates = findAceEarnedDates(summary.records, titleQ's);
+    const aceEarnedDates = findAceEarnedDates(summary.records, titleQs);
     if (aceEarnedDates.length > 0) {
         let aceDisplayText = '';
         aceEarnedDates.forEach(ace => {
@@ -1676,15 +1676,15 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
     }
     return '';
 })()}
-                                    ${aceQ's < 10 && aceQ's >= 0 ? `<div class="ace-info"><span>Q's until next Ace:</span> <strong>${10 - (aceQ's % 10)}</strong></div>` : 
-                                    aceQ's >= 10 ? `<div class="ace-info"><span>Q's until next Ace:</span> <strong>${10 - (aceQ's % 10)}</strong></div>` : ''}
+                                    ${aceQs < 10 && aceQs >= 0 ? `<div class="ace-info"><span>Qs until next Ace:</span> <strong>${10 - (aceQs % 10)}</strong></div>` : 
+                                    aceQs >= 10 ? `<div class="ace-info"><span>Qs until next Ace:</span> <strong>${10 - (aceQs % 10)}</strong></div>` : ''}
                                 ` : `
                                     <div style="color: #dc3545;">
-                                        <div><span>Need:</span> ${summary.totalQ's < 4 ? `${4 - summary.totalQ's} more Q's` : ''}
-                                        ${summary.totalQ's < 4 && judgeCount < 2 ? ', ' : ''}
+                                        <div><span>Need:</span> ${summary.totalQs < 4 ? `${4 - summary.totalQs} more Qs` : ''}
+                                        ${summary.totalQs < 4 && judgeCount < 2 ? ', ' : ''}
                                         ${judgeCount < 2 ? `${2 - judgeCount} more judge${judgeCount === 0 ? 's' : ''}` : ''}
                                         ${level.startsWith('Games ') && getUniqueGames(summary.records).size < 2 ? 
-                                            `${(summary.totalQ's < 4 || judgeCount < 2) ? ', ' : ''}${2 - getUniqueGames(summary.records).size} more different game${getUniqueGames(summary.records).size === 0 ? 's' : ''}` : ''}</div>
+                                            `${(summary.totalQs < 4 || judgeCount < 2) ? ', ' : ''}${2 - getUniqueGames(summary.records).size} more different game${getUniqueGames(summary.records).size === 0 ? 's' : ''}` : ''}</div>
                                         ${!isValidated && !level.startsWith('Games ') ? `<div><span>Prerequisites:</span> ${getPrerequisiteText(level)}</div>` : ''}
                                     </div>
                                 `}
@@ -1701,80 +1701,80 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
             document.getElementById('summaryContent').innerHTML = html || '<div class="error-message">No level data to display</div>';
         }
 
-        function calculateTitleQ's(records) {
+        function calculateTitleQs(records) {
             // Sort records chronologically
             const sortedRecords = records
-                .filter(r => r.Q's > 0 && r.date instanceof Date && !isNaN(r.date))
+                .filter(r => r.Qs > 0 && r.date instanceof Date && !isNaN(r.date))
                 .sort((a, b) => a.date - b.date);
             
-            let cumulativeQ's = 0;
+            let cumulativeQs = 0;
             let judges = new Set();
             
             for (const record of sortedRecords) {
-                const prevQ's = cumulativeQ's;
+                const prevQs = cumulativeQs;
                 const prevJudgeCount = judges.size;
                 
-                cumulativeQ's += record.Q's;
+                cumulativeQs += record.Qs;
                 if (record.judge) judges.add(record.judge);
                 
                 // Check if title requirements are NOW met (but weren't before)
-                const nowHasTitle = cumulativeQ's >= 4 && judges.size >= 2;
-                const previouslyHadTitle = prevQ's >= 4 && prevJudgeCount >= 2;
+                const nowHasTitle = cumulativeQs >= 4 && judges.size >= 2;
+                const previouslyHadTitle = prevQs >= 4 && prevJudgeCount >= 2;
                 
                 if (nowHasTitle && !previouslyHadTitle) {
                     // Title was just earned with this record
-                    // Calculate how many Q's from this record went to earning the title
-                    let Q'sTowardTitle = record.Q's;
+                    // Calculate how many Qs from this record went to earning the title
+                    let QsTowardTitle = record.Qs;
                     
-                    // If we already had 4+ Q's but needed another judge
-                    if (prevQ's >= 4 && prevJudgeCount < 2) {
+                    // If we already had 4+ Qs but needed another judge
+                    if (prevQs >= 4 && prevJudgeCount < 2) {
                         // Only 1 point goes to title (to satisfy the minimum), rest goes to ace
-                        Q'sTowardTitle = 1;
+                        QsTowardTitle = 1;
                     }
-                    // If we had 2+ judges but needed more Q's
-                    else if (prevJudgeCount >= 2 && prevQ's < 4) {
-                        // Only enough Q's to reach 4 go to title
-                        Q'sTowardTitle = 4 - prevQ's;
+                    // If we had 2+ judges but needed more Qs
+                    else if (prevJudgeCount >= 2 && prevQs < 4) {
+                        // Only enough Qs to reach 4 go to title
+                        QsTowardTitle = 4 - prevQs;
                     }
                     // If we needed both conditions
-                    else if (prevQ's < 4 && prevJudgeCount < 2) {
-                        // Enough Q's to reach 4, or all the Q's if less than needed
-                        Q'sTowardTitle = Math.min(record.Q's, 4 - prevQ's);
+                    else if (prevQs < 4 && prevJudgeCount < 2) {
+                        // Enough Qs to reach 4, or all the Qs if less than needed
+                        QsTowardTitle = Math.min(record.Qs, 4 - prevQs);
                     }
                     
                     return {
-                        titleQ's: prevQ's + Q'sTowardTitle,
+                        titleQs: prevQs + QsTowardTitle,
                         titleDate: record.date
                     };
                 }
             }
             
-            // If we get here, either no title was earned, or all Q's go to title
+            // If we get here, either no title was earned, or all Qs go to title
             return {
-                titleQ's: cumulativeQ's,
+                titleQs: cumulativeQs,
                 titleDate: sortedRecords[sortedRecords.length - 1]?.date
             };
         }
 
-        function findAceEarnedDates(records, titleQ's) {
+        function findAceEarnedDates(records, titleQs) {
             const sortedRecords = records
-                .filter(r => r.Q's > 0 && r.date instanceof Date && !isNaN(r.date))
+                .filter(r => r.Qs > 0 && r.date instanceof Date && !isNaN(r.date))
                 .sort((a, b) => a.date - b.date);
             
-            let cumulativeQ's = 0;
+            let cumulativeQs = 0;
             const aceEarnedDates = [];
             
             for (const record of sortedRecords) {
-                const prevQ's = cumulativeQ's;
-                cumulativeQ's += record.Q's;
+                const prevQs = cumulativeQs;
+                cumulativeQs += record.Qs;
                 
                 // Check for ace milestones after title was earned
-                if (prevQ's >= titleQ's && cumulativeQ's > titleQ's) {
-                    const prevAceQ's = prevQ's - titleQ's;
-                    const newAceQ's = cumulativeQ's - titleQ's;
+                if (prevQs >= titleQs && cumulativeQs > titleQs) {
+                    const prevAceQs = prevQs - titleQs;
+                    const newAceQs = cumulativeQs - titleQs;
                     
-                    const prevAceCount = Math.floor(prevAceQ's / 10);
-                    const newAceCount = Math.floor(newAceQ's / 10);
+                    const prevAceCount = Math.floor(prevAceQs / 10);
+                    const newAceCount = Math.floor(newAceQs / 10);
                     
                     // If ace count increased, record when each ace was earned
                     for (let i = prevAceCount + 1; i <= newAceCount; i++) {
@@ -1805,7 +1805,7 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
                     const summary = levelSummary[level];
                     const uniqueGames = getUniqueGames(summary.records);
                     const hasEnoughGames = uniqueGames.size >= 2;
-                    const hasBasicRequirements = summary.totalQ's >= 4 && summary.judges.size >= 2;
+                    const hasBasicRequirements = summary.totalQs >= 4 && summary.judges.size >= 2;
                     validatedLevels[level] = hasEnoughGames && hasBasicRequirements;
                 }
             });
@@ -1856,17 +1856,17 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
 
         function checkLevelRequirements(levelData) {
             if (!levelData) return false;
-            return levelData.totalQ's >= 4 && levelData.judges.size >= 2;
+            return levelData.totalQs >= 4 && levelData.judges.size >= 2;
         }
 
         function getPrerequisiteText(level) {
             if (!prerequisites[level]) return 'None';
             
             if (level === "Investigator 3") {
-                return 'Either "Patrol 1" OR "Detective 2" (4+ Q's, 2+ judges each)';
+                return 'Either "Patrol 1" OR "Detective 2" (4+ Qs, 2+ judges each)';
             }
             
-            return `"${prerequisites[level][0]}" (4+ Q's, 2+ judges)`;
+            return `"${prerequisites[level][0]}" (4+ Qs, 2+ judges)`;
         }
 
         function showLevelDetails(level, dogName) {
@@ -1881,7 +1881,7 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
                             <th>Date</th>
                             <th>Judge</th>
                             <th>Results</th>
-                            <th>Q's</th>
+                            <th>Qs</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1893,14 +1893,14 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
                 const date = record.date && record.date instanceof Date && !isNaN(record.date) 
                     ? record.date.toLocaleDateString() 
                     : 'N/A';
-                const Q'sClass = record.Q's > 0 ? 'Q's-badge' : 'Q's-badge zero';
+                const QsClass = record.Qs > 0 ? 'Qs-badge' : 'Qs-badge zero';
                 
                 html += `
                     <tr>
                         <td>${date}</td>
                         <td>${record.judge || 'N/A'}</td>
                         <td>${record.results || 'N/A'}</td>
-                        <td><span class="${Q'sClass}">${record.Q's}</span></td>
+                        <td><span class="${QsClass}">${record.Qs}</span></td>
                     </tr>
                 `;
             });
@@ -2019,9 +2019,9 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; font-size: 0.9rem; color: #004085;">
                         <div><span style="background: #d4edda; padding: 2px 6px; border-radius: 3px; margin-right: 8px;"><strong>Title!</strong></span> - Title earned</div>
                         <div><span style="background: #d4edda; padding: 2px 6px; border-radius: 3px; margin-right: 8px;"><strong>Ace2</strong></span> - Has earned Ace2</div>
-                        <div><span style="background: linear-gradient(135deg, #e8f5e8, #d4edda); padding: 2px 6px; border-radius: 3px; margin-right: 8px;"><strong>3 → Ace</strong></span> - Needs 3 Q's for first Ace</div>
-                        <div><span style="background: linear-gradient(135deg, #e8f5e8, #d4edda); padding: 2px 6px; border-radius: 3px; margin-right: 8px;"><strong>7 → Ace3</strong></span> - Needs 7 Q's for next Ace level</div>
-                        <div><span style="background: #fff3cd; padding: 2px 6px; border-radius: 3px; margin-right: 8px;"><strong>3 Q's, 1 judge needed for title</strong></span> - Requirements to achieve Title</div>
+                        <div><span style="background: linear-gradient(135deg, #e8f5e8, #d4edda); padding: 2px 6px; border-radius: 3px; margin-right: 8px;"><strong>3 → Ace</strong></span> - Needs 3 Qs for first Ace</div>
+                        <div><span style="background: linear-gradient(135deg, #e8f5e8, #d4edda); padding: 2px 6px; border-radius: 3px; margin-right: 8px;"><strong>7 → Ace3</strong></span> - Needs 7 Qs for next Ace level</div>
+                        <div><span style="background: #fff3cd; padding: 2px 6px; border-radius: 3px; margin-right: 8px;"><strong>3 Qs, 1 judge needed for title</strong></span> - Requirements to achieve Title</div>
                         <div><span style="color: #666; margin-right: 8px;"><strong>-</strong></span> - No entries at this level</div>
                     </div>
                 </div>
@@ -2053,14 +2053,14 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
                     
                     if (!levelSummary[record.level]) {
                         levelSummary[record.level] = {
-                            totalQ's: 0,
+                            totalQs: 0,
                             judges: new Set(),
                             records: []
                         };
                     }
                     
-                    if (record.Q's > 0) {
-                        levelSummary[record.level].totalQ's += record.Q's;
+                    if (record.Qs > 0) {
+                        levelSummary[record.level].totalQs += record.Qs;
                         if (record.judge) {
                             levelSummary[record.level].judges.add(record.judge);
                         }
@@ -2124,49 +2124,49 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
                     let cellStyle = 'padding: 10px 8px; text-align: center; border-right: 1px solid #f0f0f0;';
 
                     if (levelData) {
-                        const totalQ's = levelData.totalQ's;
+                        const totalQs = levelData.totalQs;
                         const judgeCount = levelData.judges.size;
-                        const hasTitle = totalQ's >= 4 && judgeCount >= 2;
+                        const hasTitle = totalQs >= 4 && judgeCount >= 2;
 
                         if (hasTitle) {
-                            const titleInfo = calculateTitleQ's(levelData.records);
-                            const titleQ's = titleInfo.titleQ's;
-                            const aceQ's = Math.max(0, totalQ's - titleQ's);
+                            const titleInfo = calculateTitleQs(levelData.records);
+                            const titleQs = titleInfo.titleQs;
+                            const aceQs = Math.max(0, totalQs - titleQs);
                             
-                            if (aceQ's >= 10) {
-                                const aceCount = Math.floor(aceQ's / 10);
-                                const Q'sToNextAce = 10 - (aceQ's % 10);
+                            if (aceQs >= 10) {
+                                const aceCount = Math.floor(aceQs / 10);
+                                const QsToNextAce = 10 - (aceQs % 10);
                                 const nextAceNumber = aceCount + 1;
                                 
-                                if (Q'sToNextAce === 10) {
+                                if (QsToNextAce === 10) {
                                     // Exactly on an ACE milestone
                                     cellContent = `<strong style="color: #6f42c1;">Ace${aceCount}</strong>`;
                                 } else {
-                                    // Show Q's needed to next ACE
-                                    cellContent = `<strong style="color: #6f42c1;">${Q'sToNextAce} → Ace${nextAceNumber}</strong>`;
+                                    // Show Qs needed to next ACE
+                                    cellContent = `<strong style="color: #6f42c1;">${QsToNextAce} → Ace${nextAceNumber}</strong>`;
                                 }
                                 cellStyle += ' background: linear-gradient(135deg, #e8f5e8, #d4edda);';
                             } else {
-                                // Has title but less than 10 ace Q's
-                                const Q'sToFirstAce = 10 - aceQ's;
-                                if (aceQ's === 0) {
+                                // Has title but less than 10 ace Qs
+                                const QsToFirstAce = 10 - aceQs;
+                                if (aceQs === 0) {
                                     cellContent = `<strong style="color: #155724;">Title!</strong>`;
                                 } else {
-                                    cellContent = `<strong style="color: #155724;">${Q'sToFirstAce} → Ace</strong>`;
+                                    cellContent = `<strong style="color: #155724;">${QsToFirstAce} → Ace</strong>`;
                                 }
                                 cellStyle += ' background: #d4edda;';
                             }
-                       } else if (totalQ's > 0) {
-                            const Q'sNeeded = Math.max(0, 4 - totalQ's);
+                       } else if (totalQs > 0) {
+                            const QsNeeded = Math.max(0, 4 - totalQs);
                             const judgesNeeded = Math.max(0, 2 - judgeCount);
                             
                             let needMoreText = '';
-                            if (Q'sNeeded > 0 && judgesNeeded > 0) {
-                                const qText = Q'sNeeded === 1 ? '1 Q' : `${Q'sNeeded} Q's`;
+                            if (QsNeeded > 0 && judgesNeeded > 0) {
+                                const qText = QsNeeded === 1 ? '1 Q' : `${QsNeeded} Qs`;
                                 const judgeText = judgesNeeded === 1 ? '1 judge' : `${judgesNeeded} judges`;
                                 needMoreText = `${qText}, ${judgeText} needed for title`;
-                            } else if (Q'sNeeded > 0) {
-                                needMoreText = Q'sNeeded === 1 ? '1 Q needed for title' : `${Q'sNeeded} Q's needed for title`;
+                            } else if (QsNeeded > 0) {
+                                needMoreText = QsNeeded === 1 ? '1 Q needed for title' : `${QsNeeded} Qs needed for title`;
                             } else if (judgesNeeded > 0) {
                                 needMoreText = judgesNeeded === 1 ? '1 judge needed for title' : `${judgesNeeded} judges needed for title`;
                             }
@@ -2211,12 +2211,12 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
                 <div class="validation-rules">
                     <h4>Title Requirements</h4>
                     <ul>
-                        <li>Minimum 4 Q's required for each level</li>
-                        <li>Q's must come from at least 2 different judges</li>
+                        <li>Minimum 4 Qs required for each level</li>
+                        <li>Qs must come from at least 2 different judges</li>
                         <li>Prerequisites must be met before advancing to higher levels</li>
                         <li>Special case: "Investigator 3" requires either "Patrol 1" OR "Detective 2"</li>
                         <li>Games levels require at least 2 different games (BJ, C, P, T, GB)</li>
-                        <li>Ace awards given every 10 Q's after title is earned</li>
+                        <li>Ace awards given every 10 Qs after title is earned</li>
                     </ul>
                 </div>
             `;
@@ -2278,5 +2278,6 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
     </script>
 </body>
 </html>
+
 
 
