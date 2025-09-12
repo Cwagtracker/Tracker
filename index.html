@@ -427,8 +427,7 @@
        /* Add these rules to your existing @media print section */
 
 @media print {
-    /* Keep existing body and container styles */
-    body {
+       body {
         background: white !important;
         padding: 5px !important;
         margin: 0 !important;
@@ -2251,9 +2250,8 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
                     showFileUpload();
                 }
             }, 200);
-        });
-
-        // Close modal when clicking outside of it
+    
+            // Close modal when clicking outside of it
         window.onclick = function(event) {
             const modal = document.getElementById('detailsModal');
             if (event.target === modal) {
@@ -2263,6 +2261,7 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
     </script>
 </body>
 </html>
+
 
 
 
