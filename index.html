@@ -1478,17 +1478,17 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
             // Format the search input
             const formattedSearch = formatRegistrationNumber(searchInput);
             
-            // Find exact matching records only
+            // Find exact matching records only - convert to string first
             const dogRecords = trialingData.filter(record => 
                 record.registrationNumber && 
-                record.registrationNumber.toLowerCase() === formattedSearch.toLowerCase()
+                record.registrationNumber.toString().toLowerCase() === formattedSearch.toLowerCase()
             );
 
             if (dogRecords.length === 0) {
                 // If no exact match, show suggestion with partial matches
                 const partialMatches = trialingData.filter(record =>
                     record.registrationNumber && 
-                    record.registrationNumber.toLowerCase().includes(formattedSearch.toLowerCase())
+                    record.registrationNumber.toString().toLowerCase().includes(formattedSearch.toLowerCase())
                 ).slice(0, 5); // Limit to 5 suggestions
 
                 let errorMessage = `No dog found with registration number: <strong>${formattedSearch}</strong>`;
@@ -2275,6 +2275,7 @@ drawTextWithAlignmentAndDynamicSize(firstPage, aceCertificateName, aceCertificat
     </script>
 </body>
 </html>
+
 
 
 
